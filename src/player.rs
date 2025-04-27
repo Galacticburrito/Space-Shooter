@@ -1,6 +1,7 @@
 use crate::{
     PalColor, SystemUpdateSet,
     body::{Body, RotationBody},
+    collision::Collider,
     gun::{Gun, GunType},
 };
 use bevy::prelude::*;
@@ -25,7 +26,7 @@ fn setup(
     // player
     let shape = meshes.add(Circle::new(5.));
     let color = materials.add(PalColor::Green);
-    commands
+    let player = commands
         .spawn((
             Name::new("Player"),
             Player {},
@@ -38,44 +39,50 @@ fn setup(
             },
             MeshMaterial2d(color),
             Mesh2d(shape),
+            Collider::new_rect(5., 5.),
             Transform::from_translation(Vec3::ZERO),
         ))
-        .with_children(|parent| {
-            parent.spawn(Gun::new(GunType::Laser));
-        });
+        .id();
+
+    commands.entity(player).with_children(|parent| {
+        parent.spawn((
+            Gun::new(GunType::Laser, player),
+            Transform::from_translation(Vec3::ZERO),
+        ));
+    });
 }
 
 #[derive(Component)]
 pub struct Player {}
 
 fn player_accelerate(
-    mut query: Query<(&mut Body, &RotationBody), With<Player>>,
+    mut player: Query<(&mut Body, &RotationBody), With<Player>>,
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
     let acceleration_speed = 2.;
-    for (mut body, rot_body) in &mut query {
-        if keys.pressed(KeyCode::KeyW) {
-            let x = rot_body.rotation.cos();
-            let y = rot_body.rotation.sin();
-            body.velocity +=
-                Vec2::new(x, y).normalize_or(Vec2::X) * acceleration_speed * time.delta_secs();
-        }
+
+    let (mut body, rot_body) = player.single_mut();
+    if keys.pressed(KeyCode::KeyW) {
+        let x = rot_body.rotation.cos();
+        let y = rot_body.rotation.sin();
+        body.velocity +=
+            Vec2::new(x, y).normalize_or(Vec2::X) * acceleration_speed * time.delta_secs();
     }
 }
 
 fn player_rotate(
-    mut query: Query<&mut RotationBody, With<Player>>,
+    mut player: Query<&mut RotationBody, With<Player>>,
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
     let rotate_speed = 1.;
-    for mut rot_body in &mut query {
-        if keys.pressed(KeyCode::KeyA) {
-            rot_body.angular_velocity += rotate_speed * time.delta_secs();
-        }
-        if keys.pressed(KeyCode::KeyD) {
-            rot_body.angular_velocity -= rotate_speed * time.delta_secs();
-        }
+
+    let mut rot_body = player.single_mut();
+    if keys.pressed(KeyCode::KeyA) {
+        rot_body.angular_velocity += rotate_speed * time.delta_secs();
+    }
+    if keys.pressed(KeyCode::KeyD) {
+        rot_body.angular_velocity -= rotate_speed * time.delta_secs();
     }
 }

@@ -2,22 +2,19 @@ use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 mod color_palette;
-use body::BodyPlugin;
 use color_palette::PalColor;
 mod body;
 mod player;
-use debug::DebugPlugin;
-use planet::PlanetPlugin;
-use player::{Player, PlayerPlugin};
+use player::Player;
+mod bullet;
 mod camera;
-use camera::CameraPlugin;
-mod space;
-use space::SpacePlugin;
+mod collision;
 mod debug;
 mod gun;
-use gun::GunPlugin;
 mod iterable_enum;
+mod lifetime;
 mod planet;
+mod space;
 
 fn main() {
     App::new()
@@ -29,13 +26,16 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins((
-            CameraPlugin {},
-            DebugPlugin {},
-            SpacePlugin {},
-            PlayerPlugin {},
-            PlanetPlugin {},
-            BodyPlugin {},
-            GunPlugin {},
+            debug::DebugPlugin {},
+            camera::CameraPlugin {},
+            space::SpacePlugin {},
+            body::BodyPlugin {},
+            planet::PlanetPlugin {},
+            player::PlayerPlugin {},
+            bullet::BulletPlugin {},
+            gun::GunPlugin {},
+            lifetime::LifetimePlugin {},
+            collision::CollisionPlugin {},
         ))
         .add_systems(Startup, setup)
         .configure_sets(
@@ -43,6 +43,7 @@ fn main() {
             (
                 SystemUpdateSet::Main.before(SystemUpdateSet::Body),
                 SystemUpdateSet::Body.before(SystemUpdateSet::Camera),
+                SystemUpdateSet::Camera,
             ),
         )
         .run();

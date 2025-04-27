@@ -1,6 +1,7 @@
 use crate::{
     PalColor,
     body::Body,
+    collision::Collider,
     color_palette,
     space::{Gravitated, GravitySource},
 };
@@ -26,7 +27,8 @@ fn setup(
         position: Vec2::new(-50., 0.),
         velocity: Vec2::new(0., -10.),
     };
-    let shape = meshes.add(Circle::new(determine_radius(&body)));
+    let radius = determine_radius(&body);
+    let shape = meshes.add(Circle::new(radius));
     commands.spawn((
         Name::new("Planet"),
         body.clone(),
@@ -34,6 +36,7 @@ fn setup(
         Gravitated {},
         MeshMaterial2d(color),
         Mesh2d(shape),
+        Collider::new_circle(radius),
         Transform::from_translation(Vec3::ZERO),
     ));
 
@@ -44,7 +47,8 @@ fn setup(
         position: Vec2::new(100., 0.),
         velocity: Vec2::new(-10., 0.),
     };
-    let shape = meshes.add(Circle::new(determine_radius(&body)));
+    let radius = determine_radius(&body);
+    let shape = meshes.add(Circle::new(radius));
     commands.spawn((
         Name::new("Planet"),
         body,
@@ -52,6 +56,7 @@ fn setup(
         Gravitated {},
         MeshMaterial2d(color),
         Mesh2d(shape),
+        Collider::new_circle(radius),
         Transform::from_translation(Vec3::ZERO),
     ));
 }
