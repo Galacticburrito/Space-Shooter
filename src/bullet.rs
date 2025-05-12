@@ -1,6 +1,9 @@
-use crate::{PalColor, SystemUpdateSet, body::Body, collision::CollisionEvent, lifetime::Lifetime};
+use crate::{
+    Damage, PalColor, SystemUpdateSet, body::Body, collision::CollisionEvent, health::Health,
+    lifetime::Lifetime,
+};
 use bevy::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 pub struct BulletPlugin {}
 
@@ -84,37 +87,69 @@ pub enum BulletType {
 
 /// if bullet hit anything not own ship, gets destroyed and adds damage if applicable
 fn bullet_collide(
+    children_query: Query<&Children>,
     mut collision_events: EventReader<CollisionEvent>,
     mut commands: Commands,
     world: &World,
 ) {
     for collision in collision_events.read() {
         match collision.get_component::<Bullet>(world) {
-            (Some(bullet_1), Some(bullet_2)) => {
+            (Some(_), Some(_)) => {
                 commands.entity(collision.0).despawn();
                 commands.entity(collision.1).despawn();
                 info!("bullet collided w/ bullet!");
             }
             (Some(bullet_1), None) => {
-                apply_bullet_hit(collision.0, bullet_1, collision.1, &mut commands);
+                apply_bullet_hit(
+                    collision.0,
+                    bullet_1,
+                    collision.1,
+                    children_query,
+                    &mut commands,
+                    &world,
+                );
             }
             (None, Some(bullet_2)) => {
-                apply_bullet_hit(collision.1, bullet_2, collision.0, &mut commands);
+                apply_bullet_hit(
+                    collision.1,
+                    bullet_2,
+                    collision.0,
+                    children_query,
+                    &mut commands,
+                    &world,
+                );
             }
             (None, None) => {}
         }
     }
 }
 
+/// delete bullet, apply damage to other object
 fn apply_bullet_hit(
     bullet_entity: Entity,
     bullet: &Bullet,
     other: Entity,
+    children_query: Query<&Children>,
     commands: &mut Commands,
+    world: &World,
 ) {
     if bullet.shooter == other {
         return;
     }
+
+    // check if other is descendant of shooter
+    if let Ok(shooter_children) = children_query.get(bullet.shooter) {
+        for child in shooter_children {
+            if child.clone() == other {
+                return;
+            }
+        }
+    }
+
     commands.entity(bullet_entity).despawn();
-    info!("bullet collided w/ something!");
+    info!("bullet collided w/ entity {}!", other);
+
+    if world.get::<Health>(other).is_some() {
+        commands.entity(other).insert(Damage(bullet.damage));
+    }
 }

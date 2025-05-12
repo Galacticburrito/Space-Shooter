@@ -1,0 +1,24 @@
+(
+    [
+        {
+            name: "engine_mk1",
+            data: (
+            power: 100.0, 
+            thrust: 50.0,
+            efficiency: 0.85,
+            ),
+
+            components: [(type: Health, data: (value: 100)),] 
+        },
+        {
+            name: "engine_mk2",
+
+            data:(
+            power: 150.0,
+            thrust: 75.0,
+            efficiency: 0.92,
+            ),
+                components: [],
+        },
+    ],
+)

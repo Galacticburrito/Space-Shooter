@@ -1,8 +1,12 @@
 use crate::{
-    PalColor, SystemUpdateSet,
+    Health, PalColor, SystemUpdateSet,
     body::{Body, RotationBody},
     collision::Collider,
-    gun::{Gun, GunType},
+    ship::{self, ShipType},
+    ship_composition::{
+        engine::{Engine, EngineType},
+        gun::{Gun, GunType},
+    },
 };
 use bevy::prelude::*;
 
@@ -23,66 +27,90 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    // player
-    let shape = meshes.add(Circle::new(5.));
-    let color = materials.add(PalColor::Green);
-    let player = commands
-        .spawn((
-            Name::new("Player"),
-            Player {},
-            Body {
-                mass: 100.,
-                ..Default::default()
-            },
-            RotationBody {
-                ..Default::default()
-            },
-            MeshMaterial2d(color),
-            Mesh2d(shape),
-            Collider::new_rect(5., 5.),
-            Transform::from_translation(Vec3::ZERO),
-        ))
-        .id();
+    let player_ship = ship::spawn_ship(
+        &ShipType::Interceptor,
+        Body {
+            mass: 100.,
+            ..Default::default()
+        },
+        &mut materials,
+        &mut meshes,
+        &mut commands,
+    );
 
-    commands.entity(player).with_children(|parent| {
-        parent.spawn((
-            Gun::new(GunType::Laser, player),
-            Transform::from_translation(Vec3::ZERO),
-        ));
-    });
+    commands
+        .entity(player_ship)
+        .insert((Name::new("Player"), Player {}));
 }
 
 #[derive(Component)]
 pub struct Player {}
 
 fn player_accelerate(
-    mut player: Query<(&mut Body, &RotationBody), With<Player>>,
+    mut engine_query: Query<&mut Engine>,
+    player_children: Query<&Children, With<Player>>,
     keys: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
-) {
-    let acceleration_speed = 2.;
+) -> Result<(), BevyError> {
+    let p_children = player_children.single()?;
 
-    let (mut body, rot_body) = player.single_mut();
-    if keys.pressed(KeyCode::KeyW) {
-        let x = rot_body.rotation.cos();
-        let y = rot_body.rotation.sin();
-        body.velocity +=
-            Vec2::new(x, y).normalize_or(Vec2::X) * acceleration_speed * time.delta_secs();
+    let w_pressed = keys.pressed(KeyCode::KeyW);
+    let s_pressed = keys.pressed(KeyCode::KeyS);
+
+    let throttle_action = match (w_pressed, s_pressed) {
+        (true, true) | (false, false) => |engine: &mut Engine| engine.hold_throttle(),
+        (true, false) => |engine: &mut Engine| engine.full_throttle(),
+        (false, true) => |engine: &mut Engine| engine.no_throttle(),
+    };
+
+    for &child in p_children {
+        if let Ok(mut engine) = engine_query.get_mut(child) {
+            if engine.engine_type == EngineType::Main {
+                throttle_action(&mut engine);
+            }
+        }
     }
+    Ok(())
 }
 
-fn player_rotate(
+fn pplayer_rotate(
     mut player: Query<&mut RotationBody, With<Player>>,
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
-) {
+) -> Result<(), BevyError> {
     let rotate_speed = 1.;
 
-    let mut rot_body = player.single_mut();
+    let mut rot_body = player.single_mut()?;
     if keys.pressed(KeyCode::KeyA) {
         rot_body.angular_velocity += rotate_speed * time.delta_secs();
     }
     if keys.pressed(KeyCode::KeyD) {
         rot_body.angular_velocity -= rotate_speed * time.delta_secs();
     }
+    Ok(())
+}
+
+fn player_rotate(
+    mut engine_query: Query<&mut Engine>,
+    player_children: Query<&Children, With<Player>>,
+    keys: Res<ButtonInput<KeyCode>>,
+) -> Result<(), BevyError> {
+    let p_children = player_children.single()?;
+
+    let a_pressed = keys.pressed(KeyCode::KeyA);
+    let d_pressed = keys.pressed(KeyCode::KeyD);
+
+    let throttle_action = match (a_pressed, d_pressed) {
+        (true, true) | (false, false) => |engine: &mut Engine| engine.hold_throttle(),
+        (true, false) => |engine: &mut Engine| engine.full_throttle(),
+        (false, true) => |engine: &mut Engine| engine.min_throttle(),
+    };
+
+    for &child in p_children {
+        if let Ok(mut engine) = engine_query.get_mut(child) {
+            if engine.engine_type == EngineType::Thruster {
+                throttle_action(&mut engine);
+            }
+        }
+    }
+    Ok(())
 }

@@ -40,7 +40,7 @@ fn lifetime_syst(
     for (entity, mut lifetime) in query.iter_mut() {
         lifetime.timer.tick(time.delta());
         if lifetime.timer.finished() {
-            commands.entity(entity).despawn_recursive();
+            commands.entity(entity).despawn();
         }
     }
 }

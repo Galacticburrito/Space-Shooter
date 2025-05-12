@@ -9,12 +9,9 @@ pub struct CollisionPlugin {}
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CollisionEvent>()
-            .add_systems(Startup, setup)
             .add_systems(Update, determine_collisions.in_set(SystemUpdateSet::Main));
     }
 }
-
-fn setup() {}
 
 #[derive(Component)]
 pub enum Collider {
@@ -81,7 +78,7 @@ fn determine_collisions(
             collider1.convert_to_global(g_transform_1.translation()),
             collider2.convert_to_global(g_transform_2.translation()),
         ) {
-            events.send(CollisionEvent(entity1, entity2));
+            events.write(CollisionEvent(entity1, entity2));
         }
     }
 }
@@ -99,11 +96,6 @@ fn has_collided(collider1: Collider, collider2: Collider) -> bool {
 
         (Collider::Circle(circle_1), Collider::Circle(circle_2)) => {
             return circle_1.intersects(&circle_2);
-        }
-
-        _ => {
-            warn!("collision combination not implemented yet!");
-            return false;
         }
     }
 }

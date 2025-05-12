@@ -24,10 +24,33 @@ pub struct Body {
     pub velocity: Vec2,
 }
 
+impl Body {
+    pub fn new(mass: f32, position: Vec2, velocity: Vec2) -> Self {
+        Body {
+            mass,
+            velocity,
+            position,
+        }
+    }
+}
+
 #[derive(Clone, Component, Default, Reflect)]
 pub struct RotationBody {
     pub rotation: f32,         // radians
     pub angular_velocity: f32, // radians
+}
+impl RotationBody {
+    pub fn new(rotation: f32, angular_velocity: f32) -> Self {
+        RotationBody {
+            rotation,
+            angular_velocity,
+        }
+    }
+
+    /// convert rad angle to unit vector
+    pub fn rotation_vector(&self) -> Vec2 {
+        Vec2::new(self.rotation.cos(), self.rotation.sin())
+    }
 }
 
 /// update transform posiiton equal to computed body transform

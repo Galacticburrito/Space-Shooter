@@ -99,14 +99,15 @@ impl Gun {
 
 #[derive(Reflect)]
 pub enum GunType {
-    Laser,         // rapid fire, moderate damage, good accuracy
-    PulseLaser,    // short bursts, less accuracy (think shotgun)
-    HomingMissile, // lock onto enemy ships (implement countermeasures?)
+    /// rapid fire, moderate damage, good accuracy
+    Laser,
+    /// short bursts, less accuracy (think shotgun)
+    PulseLaser,
+    /// lock onto enemy ships (implement countermeasures?)
+    HomingMissile,
 }
 
 // systems
-
-// TODO: system to detect if hit ship
 
 /// if space bar pressed, have player main gun shoot
 fn shoot_manual_gun(
@@ -115,9 +116,9 @@ fn shoot_manual_gun(
     bullet_assets: Res<BulletAssets>,
     keys: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
-) {
+) -> Result<(), BevyError> {
     if keys.just_pressed(KeyCode::Space) {
-        let (player_rotation, children) = player.single();
+        let (player_rotation, children) = player.single()?;
 
         for &child in children {
             if let Ok((gun, transform)) = guns.get(child) {
@@ -130,4 +131,5 @@ fn shoot_manual_gun(
             }
         }
     }
+    Ok(())
 }

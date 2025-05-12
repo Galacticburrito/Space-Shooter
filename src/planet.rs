@@ -1,5 +1,5 @@
 use crate::{
-    PalColor,
+    Health,
     body::Body,
     collision::Collider,
     color_palette,
@@ -15,21 +15,15 @@ impl Plugin for PlanetPlugin {
     }
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    // planet 1
-    let color = materials.add(color_palette::random_color());
-    let body = Body {
-        mass: 1000.,
-        position: Vec2::new(-50., 0.),
-        velocity: Vec2::new(0., -10.),
-    };
+fn make_planet(
+    body: Body,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    meshes: &mut ResMut<Assets<Mesh>>,
+) -> impl Bundle {
     let radius = determine_radius(&body);
+    let color = materials.add(color_palette::random_color());
     let shape = meshes.add(Circle::new(radius));
-    commands.spawn((
+    (
         Name::new("Planet"),
         body.clone(),
         GravitySource {},
@@ -37,27 +31,26 @@ fn setup(
         MeshMaterial2d(color),
         Mesh2d(shape),
         Collider::new_circle(radius),
+        Health::new(1000.),
         Transform::from_translation(Vec3::ZERO),
-    ));
+    )
+}
 
-    // planet 2
-    let color = materials.add(PalColor::Blue);
-    let body = Body {
-        mass: 100.,
-        position: Vec2::new(100., 0.),
-        velocity: Vec2::new(-10., 0.),
-    };
-    let radius = determine_radius(&body);
-    let shape = meshes.add(Circle::new(radius));
-    commands.spawn((
-        Name::new("Planet"),
-        body,
-        GravitySource {},
-        Gravitated {},
-        MeshMaterial2d(color),
-        Mesh2d(shape),
-        Collider::new_circle(radius),
-        Transform::from_translation(Vec3::ZERO),
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    // can't use spawn bundle for some reason (think b/c passing in mat and mesh)
+    commands.spawn(make_planet(
+        Body::new(1000., Vec2::new(-50., 0.), Vec2::new(0., -10.)),
+        &mut materials,
+        &mut meshes,
+    ));
+    commands.spawn(make_planet(
+        Body::new(100., Vec2::new(100., 0.), Vec2::new(-10., 0.)),
+        &mut materials,
+        &mut meshes,
     ));
 }
 
