@@ -5,6 +5,7 @@ use crate::{
     ship::{Ship, ShipType},
 };
 use bevy::prelude::*;
+use serde::Deserialize;
 
 pub struct EnginePlugin {}
 
@@ -15,7 +16,7 @@ impl Plugin for EnginePlugin {
     }
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Deserialize)]
 pub struct Engine {
     /// for now, only important for implementers
     pub engine_type: EngineType,
@@ -34,7 +35,7 @@ pub struct Engine {
     desired_thrust: f32,
 }
 
-#[derive(Reflect, Clone, PartialEq)]
+#[derive(Reflect, Clone, Deserialize, PartialEq)]
 pub enum EngineType {
     /// ship go forward
     Main,
@@ -43,7 +44,7 @@ pub enum EngineType {
 }
 
 impl Engine {
-    pub fn new(ship_type: &ShipType, engine_type: &EngineType) -> Self {
+    pub fn new_old(ship_type: &ShipType, engine_type: &EngineType) -> Self {
         let max_thrust;
         let max_acceleration;
         let mut reverse_percent: f32 = 0.;
@@ -82,6 +83,21 @@ impl Engine {
                 }
             }
         }
+        Engine {
+            engine_type: engine_type.clone(),
+            max_thrust,
+            max_acceleration,
+            reverse_percent,
+            ..Default::default()
+        }
+    }
+
+    pub fn new(
+        engine_type: &EngineType,
+        max_thrust: f32,
+        max_acceleration: f32,
+        reverse_percent: f32,
+    ) -> Self {
         Engine {
             engine_type: engine_type.clone(),
             max_thrust,

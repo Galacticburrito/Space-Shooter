@@ -62,7 +62,7 @@ pub fn spawn_ship(
             children![
                 (
                     Name::new("Main Engine"),
-                    Engine::new(ship_type, &EngineType::Main),
+                    Engine::new_old(ship_type, &EngineType::Main),
                     Health::new(50.),
                     Collider::new_rect(2., 2.),
                     Transform::from_translation(Vec3::ZERO),
@@ -70,7 +70,7 @@ pub fn spawn_ship(
                 // consider adding seperate left/right thruster in future
                 (
                     Name::new("Thruster Engine"),
-                    Engine::new(ship_type, &EngineType::Thruster),
+                    Engine::new_old(ship_type, &EngineType::Thruster),
                     Health::new(50.),
                     Collider::new_rect(2., 2.),
                     Transform::from_translation(Vec3::ZERO)

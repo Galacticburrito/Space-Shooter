@@ -45,10 +45,9 @@ fn apply_gravity(
                 continue;
             }
 
-            // compute acceleration of affected
-            let g_force = gravity_const.0 * (source.1 * affected.mass)
-                / source.0.distance_squared(affected.position);
-            let acceleration = g_force / affected.mass;
+            // compute acceleration of affected (mass cancels out)
+            let acceleration =
+                gravity_const.0 * (source.1) / source.0.distance_squared(affected.position);
 
             // point acceleration vector to source, then add to affected velocity
             let dir = (source.0 - affected.position).normalize_or(Vec2::new(0., 0.));
