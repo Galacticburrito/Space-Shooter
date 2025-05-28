@@ -5,15 +5,14 @@ pub struct DurabilityPlugin {}
 
 impl Plugin for DurabilityPlugin {
     fn build(&self, app: &mut App) {
-      app
-            .register_type::<Durability>();
+        app.register_type::<Durability>();
     }
 }
 
 #[derive(Component, Reflect)]
 pub struct Durability {
-    max: f32
-    current: f32
+    max: f32,
+    current: f32,
     decay_rate: f32,
 }
 

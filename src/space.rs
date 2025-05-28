@@ -6,7 +6,7 @@ pub struct SpacePlugin {}
 impl Plugin for SpacePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (apply_gravity).in_set(SystemUpdateSet::Main));
-        debug::insert_inspectable_resource(app, Some(GravityConst(100.)));
+        debug::insert_inspectable_resource(app, Some(GravityConst(100.)), true);
     }
 }
 

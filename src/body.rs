@@ -9,10 +9,12 @@ impl Plugin for BodyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (transform_from_body, transform_from_rotational_body).in_set(SystemUpdateSet::Body),
-        );
-        app.register_type::<Body>();
-        app.register_type::<RotationBody>();
+            (update_body, update_rotational_body)
+                .chain()
+                .in_set(SystemUpdateSet::Body),
+        )
+        .register_type::<Body>()
+        .register_type::<RotationBody>();
     }
 }
 
@@ -32,6 +34,10 @@ impl Body {
             position,
         }
     }
+
+    pub fn global_position(&self, global_transform: &GlobalTransform) -> Vec2 {
+        global_transform.translation().xy()
+    }
 }
 
 #[derive(Clone, Component, Default, Reflect)]
@@ -39,6 +45,7 @@ pub struct RotationBody {
     pub rotation: f32,         // radians
     pub angular_velocity: f32, // radians
 }
+
 impl RotationBody {
     pub fn new(rotation: f32, angular_velocity: f32) -> Self {
         RotationBody {
@@ -54,21 +61,18 @@ impl RotationBody {
 }
 
 /// update transform posiiton equal to computed body transform
-fn transform_from_body(mut query: Query<(&mut Transform, &mut Body)>, time: Res<Time>) {
-    for (mut transform, mut body) in &mut query {
-        transform.translation.x = body.position.x + (body.velocity.x * time.delta_secs());
-        transform.translation.y = body.position.y + (body.velocity.y * time.delta_secs());
-        body.position.x = transform.translation.x;
-        body.position.y = transform.translation.y;
+fn update_body(query: Query<(&mut Body, &mut Transform)>, time: Res<Time>) {
+    for (mut body, mut transform) in query {
+        body.position.x += body.velocity.x * time.delta_secs();
+        body.position.y += body.velocity.y * time.delta_secs();
+        transform.translation.x = body.position.x;
+        transform.translation.y = body.position.y;
     }
 }
 
 /// update transform rotation based on RotationalBody rotation
-fn transform_from_rotational_body(
-    mut query: Query<(&mut Transform, &mut RotationBody)>,
-    time: Res<Time>,
-) {
-    for (mut transform, mut rot_body) in &mut query {
+fn update_rotational_body(mut query: Query<(&mut RotationBody, &mut Transform)>, time: Res<Time>) {
+    for (mut rot_body, mut transform) in &mut query {
         rot_body.rotation += rot_body.angular_velocity * time.delta_secs();
         transform.rotation = Quat::from_rotation_z(rot_body.rotation);
     }

@@ -1,11 +1,11 @@
-use crate::{Player, SystemUpdateSet};
+use crate::{AppState, Player, SystemUpdateSet};
 use bevy::prelude::*;
 
 pub struct CameraPlugin {}
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup);
+        app.add_systems(OnEnter(AppState::GameReady), setup);
         app.add_systems(Update, follow_cam.in_set(SystemUpdateSet::Camera));
     }
 }

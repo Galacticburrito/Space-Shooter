@@ -1,11 +1,12 @@
-use crate::SystemUpdateSet;
+use crate::{AppState, SystemUpdateSet};
 use bevy::prelude::*;
+use serde::Deserialize;
 
 pub struct HealthPlugin {}
 
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, max_propagate_health)
+        app.add_systems(OnEnter(AppState::GameReady), max_propagate_health)
             .add_systems(
                 Update,
                 (propagate_health, apply_damage).in_set(SystemUpdateSet::Main),
@@ -15,7 +16,7 @@ impl Plugin for HealthPlugin {
 }
 
 /// stable component stating current health
-#[derive(Component, Reflect)]
+#[derive(Clone, Debug, Deserialize, Component, Reflect, Default)]
 pub struct Health {
     max: f32,
     current: f32,

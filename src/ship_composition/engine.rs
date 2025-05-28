@@ -16,7 +16,7 @@ impl Plugin for EnginePlugin {
     }
 }
 
-#[derive(Component, Reflect, Deserialize)]
+#[derive(Component, Clone, Debug, Reflect, Deserialize)]
 pub struct Engine {
     /// for now, only important for implementers
     pub engine_type: EngineType,
@@ -35,7 +35,7 @@ pub struct Engine {
     desired_thrust: f32,
 }
 
-#[derive(Reflect, Clone, Deserialize, PartialEq)]
+#[derive(Reflect, Clone, Debug, Deserialize, PartialEq)]
 pub enum EngineType {
     /// ship go forward
     Main,
@@ -107,11 +107,13 @@ impl Engine {
         }
     }
 
+    /// want to go at this thrust
     pub fn set_desired_thrust(&mut self, desired_thrust: f32) {
         let min_thrust = -self.max_thrust * self.reverse_percent;
         self.desired_thrust = desired_thrust.clamp(min_thrust, self.max_thrust);
     }
 
+    /// want to go faster by this much
     pub fn add_desired_thrust(&mut self, desired_thrust: f32) {
         let min_thrust = -self.max_thrust * self.reverse_percent;
         self.desired_thrust += desired_thrust;

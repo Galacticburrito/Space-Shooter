@@ -1,12 +1,17 @@
-use crate::color_palette::PalColor;
-use bevy::{app::App, gizmos::gizmos::Gizmos, prelude::*, reflect::GetTypeRegistration};
+use crate::{collision::Collider, color_palette::PalColor};
+use bevy::{
+    app::App, gizmos::gizmos::Gizmos, math::bounding::BoundingVolume, prelude::*,
+    reflect::GetTypeRegistration,
+};
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 pub struct DebugPlugin {}
 
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (draw_grid, show_rotation));
+        // don't care when these run
+        app.add_systems(Startup, draw_grid)
+            .add_systems(Update, (show_rotation, show_colliders));
     }
 }
 
@@ -15,15 +20,20 @@ impl Plugin for DebugPlugin {
 pub fn insert_inspectable_resource<T: Resource + Default + Reflect + GetTypeRegistration>(
     app: &mut App,
     initial_val: Option<T>,
+    window_display: bool,
 ) {
     app.insert_resource::<T>(initial_val.unwrap_or(T::default()))
-        .register_type::<T>()
-        .add_plugins(ResourceInspectorPlugin::<T>::default());
+        .register_type::<T>();
+    if window_display {
+        app.add_plugins(ResourceInspectorPlugin::<T>::default());
+    }
 }
 
 // GIZMOS STUFF
 
-fn draw_grid(mut gizmos: Gizmos) {
+fn draw_grid(mut gizmo_assets: ResMut<Assets<GizmoAsset>>, mut commands: Commands) {
+    let mut gizmo = GizmoAsset::default();
+
     let grid_color = PalColor::White;
     let grid_size = 100_000.;
     let grid_spacing = 100.;
@@ -31,7 +41,7 @@ fn draw_grid(mut gizmos: Gizmos) {
 
     // lines along x axis
     for x in (-half_grid_size as i32..=half_grid_size as i32).step_by(grid_spacing as usize) {
-        gizmos.line_2d(
+        gizmo.line_2d(
             Vec2::new(x as f32, -half_grid_size),
             Vec2::new(x as f32, half_grid_size),
             grid_color,
@@ -40,22 +50,52 @@ fn draw_grid(mut gizmos: Gizmos) {
 
     // lines along y axis
     for y in (-half_grid_size as i32..=half_grid_size as i32).step_by(grid_spacing as usize) {
-        gizmos.line_2d(
+        gizmo.line_2d(
             Vec2::new(-half_grid_size, y as f32),
             Vec2::new(half_grid_size, y as f32),
             grid_color,
         );
     }
+
+    // so is persistant
+    commands.spawn(Gizmo {
+        handle: gizmo_assets.add(gizmo),
+        ..default()
+    });
 }
 
-fn show_rotation(query: Query<&Transform>, mut gizmos: Gizmos) {
+fn show_rotation(query: Query<&Transform>, mut gizmo: Gizmos) {
     for transform in &query {
-        let angle = transform.rotation.z.atan2(transform.rotation.w) * 2.; // quat to x in radians
+        // quat to x in radians
+        let angle = transform.rotation.z.atan2(transform.rotation.w) * 2.;
 
         let up_vector = Vec2::new(angle.cos(), angle.sin());
 
         let line_end = transform.translation.xy() + up_vector * 20.0;
 
-        gizmos.line_2d(transform.translation.xy(), line_end, PalColor::Black);
+        gizmo.line_2d(transform.translation.xy(), line_end, PalColor::Black);
+    }
+}
+
+fn show_colliders(query: Query<(&GlobalTransform, &Collider)>, mut gizmo: Gizmos) {
+    for (transform, collider) in &query {
+        let center = transform.translation().xy();
+        let angle_rad = transform.rotation().to_euler(EulerRot::XYZ).2;
+        match collider {
+            Collider::Rectangle(aabb) => {
+                gizmo.rect_2d(
+                    Isometry2d::new(center, Rot2::radians(angle_rad)),
+                    aabb.half_size() * 2.,
+                    PalColor::Green,
+                );
+            }
+            Collider::Circle(bounding_circle) => {
+                gizmo.circle_2d(
+                    Isometry2d::from_translation(center),
+                    bounding_circle.radius(),
+                    PalColor::Green,
+                );
+            }
+        };
     }
 }

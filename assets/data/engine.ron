@@ -1,0 +1,30 @@
+(
+  [
+    (
+      name: "engine_mk1",
+      components:
+      [
+        Health((max: 100.)),
+        Engine ((
+          engine_type: Main,
+          max_thrust: 50.,
+          max_acceleration: 50.,
+          reverse_percent: 0.,
+        )),
+      ]
+    ),
+    (
+      name: "engine_mk2",
+      components:
+      [
+        Health((max: 100.)),
+        Engine ((
+          engine_type: Main,
+          max_thrust: 50.,
+          max_acceleration: 50.,
+          reverse_percent: 0.,
+        )),
+      ],
+    ),
+  ]
+)

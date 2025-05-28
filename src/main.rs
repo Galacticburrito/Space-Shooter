@@ -7,20 +7,26 @@ use color_palette::PalColor;
 mod body;
 mod player;
 use player::Player;
-mod bullet;
 mod camera;
 mod collision;
 mod debug;
 mod health;
 use health::{Damage, Health};
 mod ai;
-mod data;
+mod data_tbl;
 mod iterable_enum;
 mod lifetime;
 mod planet;
 mod ship;
 mod ship_composition;
 mod space;
+
+#[derive(Reflect, Resource, Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+pub enum AppState {
+    #[default]
+    LoadingAssets,
+    GameReady,
+}
 
 fn main() {
     let mut app = App::new();
@@ -46,28 +52,33 @@ fn main() {
         body::BodyPlugin {},
         planet::PlanetPlugin {},
         player::PlayerPlugin {},
-        bullet::BulletPlugin {},
         lifetime::LifetimePlugin {},
         collision::CollisionPlugin {},
         health::HealthPlugin {},
         ai::AiPlugin {},
         ship::ShipPlugin {},
-        data::DataPlugin {},
+        data_tbl::TablePlugin {},
+        ship_composition::ShipCompositionPlugin {},
     ))
     .configure_sets(
         Update,
         (
-            SystemUpdateSet::Main.before(SystemUpdateSet::Body),
-            SystemUpdateSet::Body.before(SystemUpdateSet::Camera),
-            SystemUpdateSet::Camera,
+            SystemUpdateSet::Main
+                .before(SystemUpdateSet::Body)
+                .run_if(in_state(AppState::GameReady)),
+            SystemUpdateSet::Body
+                .before(SystemUpdateSet::Camera)
+                .run_if(in_state(AppState::GameReady)),
+            SystemUpdateSet::Camera.run_if(in_state(AppState::GameReady)),
         ),
-    );
+    )
+    .init_state::<AppState>();
 
-    ship_composition::setup(&mut app);
     app.run();
 }
 
 /// order that systems run in Update
+/// runs in AssetState::GameReady
 #[derive(SystemSet, Debug, Clone, PartialEq, Hash, Eq)]
 pub enum SystemUpdateSet {
     Main,

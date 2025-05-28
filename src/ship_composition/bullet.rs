@@ -1,15 +1,16 @@
 use crate::{
-    Damage, PalColor, SystemUpdateSet, body::Body, collision::CollisionEvent, health::Health,
-    lifetime::Lifetime,
+    AppState, Damage, PalColor, SystemUpdateSet, body::Body, collision::CollisionEvent,
+    health::Health, lifetime::Lifetime,
 };
 use bevy::prelude::*;
-use std::collections::{HashMap, VecDeque};
+use serde::Deserialize;
+use std::collections::HashMap;
 
 pub struct BulletPlugin {}
 
 impl Plugin for BulletPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup)
+        app.add_systems(OnEnter(AppState::GameReady), setup)
             .add_systems(Update, bullet_collide.in_set(SystemUpdateSet::Main));
     }
 }
@@ -51,35 +52,43 @@ pub struct BulletAssets {
     pub materials: HashMap<BulletType, Handle<ColorMaterial>>,
 }
 
-#[derive(Component, Clone, Reflect)]
-#[require(Body, Lifetime)]
-pub struct Bullet {
-    pub shooter: Entity, // who shot the bullet
+/// data that is carried by gun, then copied over to fired bullet
+#[derive(Clone, Debug, Deserialize, Reflect)]
+pub struct BulletData {
     pub bullet_type: BulletType,
     pub speed: f32,
     pub damage: f32,
 }
 
+impl BulletData {
+    pub fn new(bullet_type: BulletType, speed: f32, damage: f32) -> Self {
+        BulletData {
+            bullet_type,
+            speed,
+            damage,
+        }
+    }
+}
+#[derive(Component, Clone, Reflect)]
+#[require(Body, Lifetime)]
+pub struct Bullet {
+    pub bullet_data: BulletData,
+    /// what entity shot the bullet
+    /// must be at top of hierarchy, since determines ignored collisions
+    /// TODO: see if want Gun itself instead, then can do searching on that, so more type safety
+    pub shooter: Entity,
+}
+
 impl Bullet {
-    pub fn new(bullet_type: BulletType, shooter: Entity) -> Self {
-        match bullet_type {
-            BulletType::Laser => Self {
-                shooter,
-                bullet_type,
-                speed: 100.,
-                damage: 5.,
-            },
-            BulletType::Missile => Self {
-                shooter,
-                bullet_type,
-                speed: 50.,
-                damage: 10.,
-            },
+    pub fn new(bullet_data: BulletData, shooter: &Entity) -> Self {
+        Bullet {
+            bullet_data,
+            shooter: shooter.clone(),
         }
     }
 }
 
-#[derive(Eq, Hash, PartialEq, Clone, Reflect)]
+#[derive(Debug, Deserialize, Eq, Hash, PartialEq, Clone, Reflect)]
 pub enum BulletType {
     Laser,
     Missile,
@@ -150,6 +159,8 @@ fn apply_bullet_hit(
     info!("bullet collided w/ entity {}!", other);
 
     if world.get::<Health>(other).is_some() {
-        commands.entity(other).insert(Damage(bullet.damage));
+        commands
+            .entity(other)
+            .insert(Damage(bullet.bullet_data.damage));
     }
 }

@@ -1,5 +1,5 @@
 use crate::{
-    Health,
+    AppState, Health,
     body::Body,
     collision::Collider,
     color_palette,
@@ -11,7 +11,7 @@ pub struct PlanetPlugin {}
 
 impl Plugin for PlanetPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup);
+        app.add_systems(OnEnter(AppState::GameReady), setup);
     }
 }
 

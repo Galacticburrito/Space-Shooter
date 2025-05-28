@@ -5,8 +5,7 @@ pub struct HeaterPlugin {}
 
 impl Plugin for HeaterPlugin {
     fn build(&self, app: &mut App) {
-      app
-            .register_type::<Heater>();
+        app.register_type::<Heater>();
     }
 }
 
@@ -18,9 +17,7 @@ pub struct Heater {
 
 impl Heater {
     pub fn new(rate: f32) -> Self {
-        Heater {
-            rate,
-        }
+        Heater { rate }
     }
 }
 
@@ -44,3 +41,4 @@ impl Heat {
 /// marker component for entities on fire
 #[derive(Component, Reflect)]
 pub struct OnFire {}
+

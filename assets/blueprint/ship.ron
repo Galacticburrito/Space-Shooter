@@ -1,0 +1,22 @@
+(
+  [
+    (
+      name: "ship_1",
+      modules:[],
+      children:
+      [
+        (Engine, "engine_mk1"),
+        (Gun, "gun1"),
+      ]
+    ),
+    (
+      name: "ship_2",
+      modules:[],
+      children:
+      [
+        (Engine, "engine_mk2"),
+        (Gun, "gun2"),
+      ]
+    ),
+  ]
+)

@@ -1,11 +1,16 @@
 use crate::{
-    Health,
+    AppState, Health,
     body::{Body, RotationBody},
     collision::Collider,
     color_palette,
+    data_tbl::{
+        blueprint::{self, BlueprintKey, BlueprintRegistry, BlueprintTable},
+        data::{self, DataKey, DataRegistry, DataTable},
+    },
     ship_composition::{
+        bullet::{BulletData, BulletType},
         engine::{Engine, EngineType},
-        gun::{Gun, GunType},
+        gun::{Gun, GunData, GunType},
     },
 };
 use bevy::prelude::*;
@@ -14,11 +19,58 @@ pub struct ShipPlugin {}
 
 impl Plugin for ShipPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup);
+        app.add_systems(OnEnter(AppState::GameReady), setup);
     }
 }
 
 fn setup() {}
+
+pub fn spawn_ship_from_data(
+    parts: &Vec<(DataKey, String)>,
+    registry: &Res<DataRegistry>,
+    table: &Res<Assets<DataTable>>,
+    commands: &mut Commands,
+) {
+    for part in parts {
+        let child_entity = data::insert_from_data(
+            &mut commands.spawn_empty(),
+            &part.0,
+            &part.1,
+            registry,
+            table,
+        );
+    }
+}
+
+pub fn spawn_ship_from_blueprint(
+    value: &str,
+    body: Body,
+    blueprint_registry: &Res<BlueprintRegistry>,
+    blueprint_table: &Res<Assets<BlueprintTable>>,
+    data_registry: &Res<DataRegistry>,
+    data_table: &Res<Assets<DataTable>>,
+    commands: &mut Commands,
+) -> Option<Entity> {
+    if let Some(ship) = blueprint::entity_from_blueprint(
+        &BlueprintKey::Ship,
+        value,
+        blueprint_registry,
+        blueprint_table,
+        data_registry,
+        data_table,
+        commands,
+    ) {
+        commands.entity(ship).insert((
+            Ship {
+                ship_type: ShipType::Interceptor,
+            },
+            body,
+            RotationBody::new(0., 0.),
+        ));
+        return Some(ship);
+    }
+    None
+}
 
 pub fn spawn_ship(
     ship_type: &ShipType,
@@ -65,9 +117,8 @@ pub fn spawn_ship(
                     Engine::new_old(ship_type, &EngineType::Main),
                     Health::new(50.),
                     Collider::new_rect(2., 2.),
-                    Transform::from_translation(Vec3::ZERO),
+                    Transform::from_translation(Vec3::ZERO), // consider adding seperate left/right thruster in future
                 ),
-                // consider adding seperate left/right thruster in future
                 (
                     Name::new("Thruster Engine"),
                     Engine::new_old(ship_type, &EngineType::Thruster),
@@ -82,13 +133,17 @@ pub fn spawn_ship(
     commands.entity(ship).with_children(|parent| {
         parent.spawn((
             Name::new("Laser"),
-            Gun::new(GunType::Laser, ship),
+            Gun::new(
+                GunData::new(GunType::Laser, 1.),
+                BulletData::new(BulletType::Laser, 10., 10.),
+            ),
+            Body::new(10., Vec2::ZERO, Vec2::ZERO),
+            RotationBody::new(0., 0.),
             Health::new(50.),
             Collider::new_rect(2., 2.),
             Transform::from_translation(Vec3::ZERO),
         ));
     });
-
     ship
 }
 
