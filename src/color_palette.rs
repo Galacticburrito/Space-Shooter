@@ -1,8 +1,10 @@
 use crate::iterable_enum::IterableEnum;
 use bevy::prelude::*;
+use serde::Deserialize;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Deserialize, Clone, Copy)]
 pub enum PalColor {
+    Random,
     Black,
     White,
     Red,
@@ -13,6 +15,7 @@ pub enum PalColor {
 impl From<PalColor> for Color {
     fn from(pal_color: PalColor) -> Self {
         match pal_color {
+            PalColor::Random => random_color(),
             PalColor::Black => Color::BLACK,
             PalColor::White => Color::WHITE,
             PalColor::Red => Color::srgb(1., 0., 0.),

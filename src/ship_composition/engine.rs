@@ -1,8 +1,9 @@
 use crate::{
     SystemUpdateSet,
-    body::{Body, RotationBody},
     health::Health,
+    rotation,
     ship::{Ship, ShipType},
+    velocity::{AngularVelocity, Velocity},
 };
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -44,54 +45,6 @@ pub enum EngineType {
 }
 
 impl Engine {
-    pub fn new_old(ship_type: &ShipType, engine_type: &EngineType) -> Self {
-        let max_thrust;
-        let max_acceleration;
-        let mut reverse_percent: f32 = 0.;
-
-        match engine_type {
-            EngineType::Main => match ship_type {
-                ShipType::Interceptor => {
-                    max_thrust = 5.;
-                    max_acceleration = 3.;
-                }
-                ShipType::Gunship => {
-                    max_thrust = 3.;
-                    max_acceleration = 2.;
-                }
-                ShipType::MissileBoat => {
-                    max_thrust = 2.;
-                    max_acceleration = 1.;
-                }
-            },
-
-            EngineType::Thruster => {
-                reverse_percent = 1.;
-                match ship_type {
-                    ShipType::Interceptor => {
-                        max_thrust = 0.01;
-                        max_acceleration = 0.1;
-                    }
-                    ShipType::Gunship => {
-                        max_thrust = 0.01;
-                        max_acceleration = 0.1;
-                    }
-                    ShipType::MissileBoat => {
-                        max_thrust = 0.01;
-                        max_acceleration = 0.1;
-                    }
-                }
-            }
-        }
-        Engine {
-            engine_type: engine_type.clone(),
-            max_thrust,
-            max_acceleration,
-            reverse_percent,
-            ..Default::default()
-        }
-    }
-
     pub fn new(
         engine_type: &EngineType,
         max_thrust: f32,
@@ -107,20 +60,20 @@ impl Engine {
         }
     }
 
-    /// want to go at this thrust
-    pub fn set_desired_thrust(&mut self, desired_thrust: f32) {
+    /// want to go at given acceleration
+    pub fn set_throttle(&mut self, desired_thrust: f32) {
         let min_thrust = -self.max_thrust * self.reverse_percent;
         self.desired_thrust = desired_thrust.clamp(min_thrust, self.max_thrust);
     }
 
     /// want to go faster by this much
-    pub fn add_desired_thrust(&mut self, desired_thrust: f32) {
+    pub fn add_throttle(&mut self, desired_thrust: f32) {
         let min_thrust = -self.max_thrust * self.reverse_percent;
         self.desired_thrust += desired_thrust;
         self.desired_thrust = self.desired_thrust.clamp(min_thrust, self.max_thrust);
     }
 
-    /// want no acceleration
+    /// want no acceleration, set thrust to 0
     pub fn no_throttle(&mut self) {
         self.desired_thrust = 0.;
     }
@@ -130,6 +83,7 @@ impl Engine {
         self.desired_thrust = self.max_thrust;
     }
 
+    /// want to go backwards at max (or 0 thrust if can't go backwards)
     pub fn min_throttle(&mut self) {
         self.desired_thrust = -self.max_thrust * self.reverse_percent;
     }
@@ -139,17 +93,28 @@ impl Engine {
         self.desired_thrust = self.current_thrust;
     }
 
+    /// return current thrust
+    pub fn current_thrust(&self) -> f32 {
+        self.current_thrust
+    }
+
     /// each engine type implements their own way of working
-    fn thrust(&self, ship_body: &mut Body, ship_rot_body: &mut RotationBody, deltatime: f32) {
+    fn thrust(
+        &self,
+        transform: &Transform,
+        velocity: &mut Velocity,
+        angular_velocity: &mut AngularVelocity,
+        deltatime: f32,
+    ) {
         match self.engine_type {
             // thrusts ship forward
             EngineType::Main => {
-                ship_body.velocity +=
-                    ship_rot_body.rotation_vector() * self.current_thrust * deltatime;
+                velocity.0 +=
+                    rotation::quat_to_vec2(transform.rotation) * self.current_thrust * deltatime;
             }
             // makes ship rotate
             EngineType::Thruster => {
-                ship_rot_body.angular_velocity += self.current_thrust * deltatime;
+                angular_velocity.0 += self.current_thrust * deltatime;
             }
         }
     }
@@ -170,11 +135,11 @@ impl Default for Engine {
 
 /// calculate and apply actual thrust based on desired thrust, engine capabilities, and health
 fn engine_thrust(
-    mut ship_query: Query<(&mut Body, &mut RotationBody, &Children), With<Ship>>,
+    mut ship_query: Query<(&Transform, &mut Velocity, &mut AngularVelocity, &Children), With<Ship>>,
     mut engine_query: Query<(&mut Engine, &Health)>,
     time: Res<Time>,
 ) {
-    for (mut s_body, mut s_rot_body, children) in &mut ship_query {
+    for (s_transform, mut s_velocity, mut s_angular_velocity, children) in &mut ship_query {
         for child in children {
             if let Ok((mut engine, health)) = engine_query.get_mut(*child) {
                 // calculate achievable delta thrust based on Health
@@ -192,7 +157,12 @@ fn engine_thrust(
                     engine.max_thrust * health.percent(),
                 );
 
-                engine.thrust(&mut s_body, &mut s_rot_body, time.delta_secs());
+                engine.thrust(
+                    s_transform,
+                    &mut s_velocity,
+                    &mut s_angular_velocity,
+                    time.delta_secs(),
+                );
             }
         }
     }

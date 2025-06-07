@@ -1,11 +1,11 @@
-use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, ecs::schedule::InternedSystemSet};
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 mod color_palette;
 use color_palette::PalColor;
-mod body;
 mod player;
+mod velocity;
 use player::Player;
 mod camera;
 mod collision;
@@ -13,10 +13,19 @@ mod debug;
 mod health;
 use health::{Damage, Health};
 mod ai;
+mod collider;
 mod data_tbl;
+mod durability;
+mod global;
+mod graphic;
 mod iterable_enum;
 mod lifetime;
+mod mass;
 mod planet;
+mod primitive;
+mod record;
+mod rotation;
+mod schedule;
 mod ship;
 mod ship_composition;
 mod space;
@@ -49,7 +58,8 @@ fn main() {
         debug::DebugPlugin {},
         camera::CameraPlugin {},
         space::SpacePlugin {},
-        body::BodyPlugin {},
+        velocity::VelocityPlugin {},
+        global::GlobalPlugin {},
         planet::PlanetPlugin {},
         player::PlayerPlugin {},
         lifetime::LifetimePlugin {},
@@ -59,9 +69,30 @@ fn main() {
         ship::ShipPlugin {},
         data_tbl::TablePlugin {},
         ship_composition::ShipCompositionPlugin {},
+        graphic::GraphicPlugin {},
     ))
-    .configure_sets(
-        Update,
+    .configure_sets(Update, SystemUpdateSet::configuration())
+    .configure_sets(FixedUpdate, SystemUpdateSet::configuration())
+    .init_state::<AppState>();
+
+    app.run();
+}
+
+/// order that systems run in Update or FixedUpdate
+/// runs in AssetState::GameReady
+#[derive(SystemSet, Debug, Clone, PartialEq, Hash, Eq)]
+pub enum SystemUpdateSet {
+    Main,
+    Body,
+    Camera,
+}
+
+impl SystemUpdateSet {
+    fn configuration() -> (
+        bevy::ecs::schedule::ScheduleConfigs<bevy::ecs::intern::Interned<dyn SystemSet>>,
+        bevy::ecs::schedule::ScheduleConfigs<bevy::ecs::intern::Interned<dyn SystemSet>>,
+        bevy::ecs::schedule::ScheduleConfigs<bevy::ecs::intern::Interned<dyn SystemSet>>,
+    ) {
         (
             SystemUpdateSet::Main
                 .before(SystemUpdateSet::Body)
@@ -70,18 +101,6 @@ fn main() {
                 .before(SystemUpdateSet::Camera)
                 .run_if(in_state(AppState::GameReady)),
             SystemUpdateSet::Camera.run_if(in_state(AppState::GameReady)),
-        ),
-    )
-    .init_state::<AppState>();
-
-    app.run();
-}
-
-/// order that systems run in Update
-/// runs in AssetState::GameReady
-#[derive(SystemSet, Debug, Clone, PartialEq, Hash, Eq)]
-pub enum SystemUpdateSet {
-    Main,
-    Body,
-    Camera,
+        )
+    }
 }

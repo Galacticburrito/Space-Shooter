@@ -1,4 +1,4 @@
-use crate::{SystemUpdateSet, body::Body, debug};
+use crate::{SystemUpdateSet, debug, mass::Mass, velocity::Velocity};
 use bevy::prelude::*;
 
 pub struct SpacePlugin {}
@@ -12,12 +12,10 @@ impl Plugin for SpacePlugin {
 
 /// affected by gravity
 #[derive(Component)]
-#[require(Body)]
 pub struct Gravitated {}
 
 /// affect gravity
 #[derive(Component)]
-#[require(Body)]
 pub struct GravitySource {}
 
 #[derive(Reflect, Resource, Default)]
@@ -26,32 +24,35 @@ pub struct GravityConst(f32);
 
 fn apply_gravity(
     mut param_set: ParamSet<(
-        Query<&Body, With<GravitySource>>,  // sources
-        Query<&mut Body, With<Gravitated>>, // affected
+        Query<(&Transform, &Mass), With<GravitySource>>, // sources
+        Query<(&Transform, &mut Velocity), With<Gravitated>>, // affected
     )>,
     gravity_const: Res<GravityConst>,
     time: Res<Time>,
 ) {
-    let sources: Vec<(Vec2, f32)> = param_set
+    let sources: Vec<(Transform, f32)> = param_set
         .p0()
         .iter()
-        .map(|body| (body.position, body.mass))
+        .map(|(transform, mass)| (*transform, mass.0))
         .collect();
 
-    for source in &sources {
-        for mut affected in &mut param_set.p1() {
-            if source.0 == affected.position {
+    for (source_transform, source_mass) in &sources {
+        for (affected_transform, mut affected_velocity) in &mut param_set.p1() {
+            if source_transform == affected_transform {
                 // same object
                 continue;
             }
 
             // compute acceleration of affected (mass cancels out)
-            let acceleration =
-                gravity_const.0 * (source.1) / source.0.distance_squared(affected.position);
+            let acceleration = gravity_const.0 * (source_mass)
+                / source_transform
+                    .translation
+                    .distance_squared(affected_transform.translation);
 
             // point acceleration vector to source, then add to affected velocity
-            let dir = (source.0 - affected.position).normalize_or(Vec2::new(0., 0.));
-            affected.velocity += dir * acceleration * time.delta_secs();
+            let dir = (source_transform.translation.xy() - affected_transform.translation.xy())
+                .normalize_or(Vec2::new(0., 0.));
+            affected_velocity.0 += dir.xy() * acceleration * time.delta_secs();
         }
     }
 }

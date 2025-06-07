@@ -1,5 +1,7 @@
 use crate::{
     Health,
+    collider::Collider,
+    primitive::Primitive,
     ship_composition::{
         bullet::{self, BulletData},
         engine::{Engine, EngineType},
@@ -50,5 +52,14 @@ pub struct GunRaw {
 impl GunRaw {
     pub fn concrete(&self) -> Gun {
         Gun::new(self.gun_data.clone(), self.bullet_data.clone())
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct ColliderRaw(Primitive);
+
+impl ColliderRaw {
+    pub fn concrete(&self) -> Collider {
+        Collider::from(self.0.clone())
     }
 }

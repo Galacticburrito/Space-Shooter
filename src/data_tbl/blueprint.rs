@@ -1,8 +1,13 @@
 use super::{
     assets_loaded::AssetsLoading,
+    component_data::{self, ComponentData},
     data::{self, DataKey, DataRegistry, DataTable},
 };
-use crate::{AppState, debug, iterable_enum::IterableEnum};
+use crate::{
+    AppState, debug,
+    iterable_enum::IterableEnum,
+    velocity::{AngularVelocity, Velocity},
+};
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
 use serde::Deserialize;
@@ -29,9 +34,11 @@ impl Plugin for BlueprintPlugin {
 struct BlueprintEntry {
     #[serde(alias = "id")]
     name: String,
-    // TODO: see if need change datakey to some sorta global key (may not need if 2 seperate tables
-    // (1 for blueprint, 1 for data)
+    /// components this parent entity will directly have
+    components: Vec<ComponentData>,
+    /// data that is added to parent entity
     modules: Vec<(DataKey, String)>,
+    /// each data element is made into a child of the parent
     children: Vec<(DataKey, String)>,
 }
 
@@ -111,27 +118,63 @@ fn access_blueprint_entry(
     Some(entry.clone())
 }
 
+/// what data do you want added to the blueprint?
+pub enum BlueprintType {
+    /// no extra data added
+    Normal,
+    /// add Transform
+    Transform(Transform),
+    /// add Transform, Velocity, and AngularVelocity
+    TransformVelocity(Transform, Velocity, AngularVelocity),
+}
+
+impl BlueprintType {
+    fn add_components(&self, entity: Entity, commands: &mut Commands) {
+        match self {
+            BlueprintType::Normal => {}
+            BlueprintType::Transform(transform) => {
+                commands.entity(entity).insert(*transform);
+            }
+            BlueprintType::TransformVelocity(transform, velocity, anguler_velocity) => {
+                commands.entity(entity).insert((
+                    *transform,
+                    velocity.clone(),
+                    anguler_velocity.clone(),
+                ));
+            }
+        }
+    }
+}
+
+/// creates entity from a given blueprint, if exists.
+/// Also adds name component and other components depending on blueprint_type
 pub fn entity_from_blueprint(
     key: &BlueprintKey,
     value: &str,
+    blueprint_type: &BlueprintType,
     blueprint_registry: &Res<BlueprintRegistry>,
     blueprint_assets: &Res<Assets<BlueprintTable>>,
     data_registry: &Res<DataRegistry>,
     data_assets: &Res<Assets<DataTable>>,
     commands: &mut Commands,
 ) -> Option<Entity> {
-    if let Some(mut entry) =
-        access_blueprint_entry(&key.string(), value, blueprint_registry, blueprint_assets)
-    {
-        let entity = main_entity(&mut entry, data_registry, data_assets, commands);
-        let child_entities = child_entities(&mut entry, data_registry, data_assets, commands);
+    let mut entry =
+        access_blueprint_entry(&key.string(), value, blueprint_registry, blueprint_assets)?;
 
-        for child_entity in child_entities {
-            commands.entity(entity).add_child(child_entity);
-        }
-        return Some(entity);
+    let entity = main_entity(&mut entry, data_registry, data_assets, commands);
+    let child_entities = child_entities(&mut entry, data_registry, data_assets, commands);
+
+    for child_entity in child_entities {
+        // add needed components to children
+        commands.entity(entity).add_child(child_entity);
+        blueprint_type.add_components(child_entity, commands);
     }
-    None
+
+    // add needed components to parent
+    commands.entity(entity).insert(Name::new(value.to_owned()));
+    blueprint_type.add_components(entity, commands);
+
+    Some(entity)
 }
 
 fn main_entity(
@@ -141,6 +184,9 @@ fn main_entity(
     commands: &mut Commands,
 ) -> Entity {
     let mut entity = commands.spawn_empty();
+
+    component_data::add_components_to_entity(&mut entity, &entry.components);
+
     for module in entry.modules.iter_mut() {
         data::insert_from_data(
             &mut entity,
@@ -160,6 +206,7 @@ fn child_entities(
     commands: &mut Commands,
 ) -> Vec<Entity> {
     let mut child_entities = Vec::new();
+
     for child_module in entry.children.iter_mut() {
         let mut child_entity = commands.spawn_empty();
         {

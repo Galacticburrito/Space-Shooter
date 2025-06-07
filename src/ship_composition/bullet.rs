@@ -1,6 +1,6 @@
 use crate::{
-    AppState, Damage, PalColor, SystemUpdateSet, body::Body, collision::CollisionEvent,
-    health::Health, lifetime::Lifetime,
+    AppState, Damage, PalColor, SystemUpdateSet, collision::CollisionEvent, health::Health,
+    lifetime::Lifetime, velocity::Velocity,
 };
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -70,7 +70,7 @@ impl BulletData {
     }
 }
 #[derive(Component, Clone, Reflect)]
-#[require(Body, Lifetime)]
+#[require(Velocity, Lifetime)]
 pub struct Bullet {
     pub bullet_data: BulletData,
     /// what entity shot the bullet

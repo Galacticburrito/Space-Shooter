@@ -7,12 +7,14 @@
         Health((max: 100.)),
         Engine ((
           engine_type: Main,
-          max_thrust: 50.,
+          max_thrust: 10.,
           max_acceleration: 50.,
           reverse_percent: 0.,
         )),
+        Collider((Rectangle(5., 5.))),
       ]
     ),
+
     (
       name: "engine_mk2",
       components:
@@ -20,11 +22,27 @@
         Health((max: 100.)),
         Engine ((
           engine_type: Main,
-          max_thrust: 50.,
+          max_thrust: 20.,
           max_acceleration: 50.,
           reverse_percent: 0.,
         )),
+        Collider((Rectangle(5., 5.))),
       ],
     ),
+
+    (
+      name: "thruster_mk1",
+      components:
+      [
+        Health((max: 100.)),
+        Engine ((
+          engine_type: Thruster,
+          max_thrust: 0.5,
+          max_acceleration: 1.,
+          reverse_percent: 1.,
+        )),
+        Collider((Rectangle(5., 5.))),
+      ]
+    )
   ]
 )

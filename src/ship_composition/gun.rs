@@ -1,14 +1,10 @@
 use super::bullet::{Bullet, BulletAssets, BulletData};
 use crate::{
-    SystemUpdateSet,
-    body::{Body, RotationBody},
-    collision::Collider,
-    lifetime::Lifetime,
+    SystemUpdateSet, collider::Collider, global::GlobalVelocity, lifetime::Lifetime, mass::Mass,
+    rotation, velocity::Velocity,
 };
 use bevy::prelude::*;
 use serde::Deserialize;
-
-// NOTE: consider spawning each guntype only once, then using that as base to shoot bullets
 
 pub struct GunPlugin {}
 
@@ -57,20 +53,12 @@ impl Gun {
         &self,
         shooter: &Entity,
         commands: &mut Commands,
-        body: &Body,
         g_transform: &GlobalTransform,
-        rotation: &RotationBody,
+        g_velocity: &GlobalVelocity,
         bullet_assets: &Res<BulletAssets>,
     ) {
         if self.can_shoot() {
-            self.shoot_bullet(
-                shooter,
-                commands,
-                body,
-                g_transform,
-                rotation,
-                bullet_assets,
-            );
+            self.shoot_bullet(shooter, commands, g_transform, g_velocity, bullet_assets);
         }
     }
 
@@ -83,41 +71,19 @@ impl Gun {
         &self,
         shooter: &Entity,
         commands: &mut Commands,
-        body: &Body,
         g_transform: &GlobalTransform,
-        rotation: &RotationBody,
+        g_velocity: &GlobalVelocity,
         bullet_assets: &Res<BulletAssets>,
     ) {
         match self.gun_data.gun_type {
             GunType::Laser => {
-                self.spawn_bullet(
-                    shooter,
-                    body,
-                    g_transform,
-                    rotation,
-                    commands,
-                    bullet_assets,
-                );
+                self.spawn_bullet(shooter, g_transform, g_velocity, commands, bullet_assets);
             }
             GunType::PulseLaser => {
-                self.spawn_bullet(
-                    shooter,
-                    body,
-                    g_transform,
-                    rotation,
-                    commands,
-                    bullet_assets,
-                );
+                self.spawn_bullet(shooter, g_transform, g_velocity, commands, bullet_assets);
             }
             GunType::HomingMissile => {
-                self.spawn_bullet(
-                    shooter,
-                    body,
-                    g_transform,
-                    rotation,
-                    commands,
-                    bullet_assets,
-                );
+                self.spawn_bullet(shooter, g_transform, g_velocity, commands, bullet_assets);
             }
         }
     }
@@ -125,9 +91,8 @@ impl Gun {
     fn spawn_bullet(
         &self,
         shooter: &Entity,
-        body: &Body,
         g_transform: &GlobalTransform,
-        rotation: &RotationBody,
+        g_velocity: &GlobalVelocity,
         commands: &mut Commands,
         bullet_assets: &Res<BulletAssets>,
     ) {
@@ -140,19 +105,19 @@ impl Gun {
             .get(&self.bullet_data.bullet_type)
             .unwrap();
 
-        info!(
-            "bullet speed: {}, body velocity: {}, rotation_vector: {}",
-            self.bullet_data.speed,
-            body.velocity,
-            rotation.rotation_vector()
-        );
+        let g_position = g_transform.translation().xy();
+
+        // velocity without g_velocity
+        let rel_velocity =
+            rotation::rad_to_vec2(Vec3::from(g_transform.rotation().to_euler(EulerRot::XYZ)).z)
+                * self.bullet_data.speed;
+        let velocity = rel_velocity + g_velocity.0;
+
         commands.spawn((
             Bullet::new(self.bullet_data.clone(), shooter),
-            Body {
-                mass: 1.,
-                position: body.global_position(g_transform),
-                velocity: rotation.rotation_vector() * (self.bullet_data.speed + body.velocity),
-            },
+            Transform::from_translation(Vec3::new(g_position.x, g_position.y, 0.)),
+            Mass(1.),
+            Velocity(velocity),
             Collider::new_rect(2., 2.),
             Lifetime::new(5.),
             MeshMaterial2d(material_handle.clone()),

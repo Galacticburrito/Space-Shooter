@@ -1,4 +1,4 @@
-use super::component_data::{ComponentConcrete, ComponentData};
+use super::component_data::{self, ComponentConcrete, ComponentData};
 use crate::{AppState, iterable_enum::IterableEnum};
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
@@ -99,7 +99,7 @@ fn access_data_entry(
     Some(entry.clone())
 }
 
-/// inserts needed components to given entity
+/// inserts needed components to given entity, as well as name
 pub fn insert_from_data(
     entity: &mut EntityCommands,
     key: &DataKey,
@@ -108,20 +108,8 @@ pub fn insert_from_data(
     assets: &Res<Assets<DataTable>>,
 ) {
     let entry = access_data_entry(&key.string(), value, data_registry, assets);
-    if let Some(mut entry) = entry {
-        for component in entry.components.iter_mut() {
-            let concrete_component = component.concrete();
-            match concrete_component {
-                ComponentConcrete::Engine(engine) => {
-                    entity.insert(engine.clone());
-                }
-                ComponentConcrete::Health(health) => {
-                    entity.insert(health.clone());
-                }
-                ComponentConcrete::Gun(gun) => {
-                    entity.insert(gun.clone());
-                }
-            }
-        }
+    if let Some(entry) = entry {
+        component_data::add_components_to_entity(entity, &entry.components);
+        entity.insert(Name::new(value.to_owned()));
     }
 }

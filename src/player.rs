@@ -1,12 +1,17 @@
 use crate::{
     AppState, SystemUpdateSet,
-    body::{Body, RotationBody},
+    data_tbl::{
+        blueprint::{BlueprintRegistry, BlueprintTable, BlueprintType},
+        data::{DataRegistry, DataTable},
+    },
+    global::GlobalVelocity,
     ship::{self, ShipType},
     ship_composition::{
         bullet::BulletAssets,
         engine::{Engine, EngineType},
         gun::Gun,
     },
+    velocity::{AngularVelocity, Velocity},
 };
 use bevy::prelude::*;
 
@@ -24,19 +29,38 @@ impl Plugin for PlayerPlugin {
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    //mut meshes: ResMut<Assets<Mesh>>,
+    //mut materials: ResMut<Assets<ColorMaterial>>,
+    b_registry: Res<BlueprintRegistry>,
+    b_table: Res<Assets<BlueprintTable>>,
+    d_registry: Res<DataRegistry>,
+    d_table: Res<Assets<DataTable>>,
 ) {
-    let player_ship = ship::spawn_ship(
+    /*let player_ship = ship::spawn_ship(
         &ShipType::Interceptor,
-        Body {
-            mass: 100.,
-            ..Default::default()
-        },
+        Transform::default(),
+        Velocity::ZERO,
         &mut materials,
         &mut meshes,
         &mut commands,
-    );
+    );*/
+
+    let Some(player_ship) = ship::spawn_ship_from_blueprint(
+        "ship_1",
+        &BlueprintType::TransformVelocity(
+            Transform::default(),
+            Velocity::ZERO,
+            AngularVelocity(0.),
+        ),
+        &b_registry,
+        &b_table,
+        &d_registry,
+        &d_table,
+        &mut commands,
+    ) else {
+        warn!("player ship unable to spawn!");
+        return;
+    };
 
     commands
         .entity(player_ship)
@@ -57,9 +81,15 @@ fn player_accelerate(
     let s_pressed = keys.pressed(KeyCode::KeyS);
 
     let throttle_action = match (w_pressed, s_pressed) {
-        (true, true) | (false, false) => |engine: &mut Engine| engine.hold_throttle(),
-        (true, false) => |engine: &mut Engine| engine.full_throttle(),
-        (false, true) => |engine: &mut Engine| engine.no_throttle(),
+        (true, true) | (false, false) => |engine: &mut Engine| {
+            engine.hold_throttle();
+        },
+        (true, false) => |engine: &mut Engine| {
+            engine.full_throttle();
+        },
+        (false, true) => |engine: &mut Engine| {
+            engine.no_throttle();
+        },
     };
 
     for &child in p_children {
@@ -83,9 +113,21 @@ fn player_rotate(
     let d_pressed = keys.pressed(KeyCode::KeyD);
 
     let throttle_action = match (a_pressed, d_pressed) {
-        (true, true) | (false, false) => |engine: &mut Engine| engine.hold_throttle(),
-        (true, false) => |engine: &mut Engine| engine.full_throttle(),
-        (false, true) => |engine: &mut Engine| engine.min_throttle(),
+        (true, true) | (false, false) => |engine: &mut Engine| {
+            // if ship is rotating less than the rotate_threshold, clamp it to 0 so no
+            // annoying drift
+            let rotate_threshold = 0.01;
+            if engine.current_thrust() < rotate_threshold {
+                engine.no_throttle();
+            }
+            engine.hold_throttle();
+        },
+        (true, false) => |engine: &mut Engine| {
+            engine.full_throttle();
+        },
+        (false, true) => |engine: &mut Engine| {
+            engine.min_throttle();
+        },
     };
 
     for &child in p_children {
@@ -102,7 +144,7 @@ fn player_rotate(
 /// TODO: move most of this logic to gun and bullet.rs
 fn player_shoot(
     player: Query<(Entity, &Children), With<Player>>,
-    guns: Query<(&Gun, &Body, &GlobalTransform, &RotationBody)>,
+    guns: Query<(&Gun, &GlobalTransform, &GlobalVelocity)>,
     bullet_assets: Res<BulletAssets>,
     keys: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
@@ -111,13 +153,12 @@ fn player_shoot(
         let (player, p_children) = player.single()?;
 
         for &child in p_children {
-            if let Ok((gun, g_body, g_transform, g_rot_body)) = guns.get(child) {
+            if let Ok((gun, g_transform, g_velocity)) = guns.get(child) {
                 gun.try_shoot(
                     &player,
                     &mut commands,
-                    g_body,
                     g_transform,
-                    g_rot_body,
+                    g_velocity,
                     &bullet_assets,
                 );
             }

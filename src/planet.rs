@@ -1,9 +1,10 @@
 use crate::{
     AppState, Health,
-    body::Body,
-    collision::Collider,
+    collider::Collider,
     color_palette,
+    mass::Mass,
     space::{Gravitated, GravitySource},
+    velocity::Velocity,
 };
 use bevy::prelude::*;
 
@@ -16,23 +17,25 @@ impl Plugin for PlanetPlugin {
 }
 
 fn make_planet(
-    body: Body,
+    transform: Transform,
+    mass: Mass,
+    velocity: Velocity,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) -> impl Bundle {
-    let radius = determine_radius(&body);
+    let radius = determine_radius(&mass);
     let color = materials.add(color_palette::random_color());
     let shape = meshes.add(Circle::new(radius));
     (
         Name::new("Planet"),
-        body.clone(),
+        transform,
+        velocity.clone(),
         GravitySource {},
         Gravitated {},
         MeshMaterial2d(color),
         Mesh2d(shape),
         Collider::new_circle(radius),
         Health::new(1000.),
-        Transform::from_translation(Vec3::ZERO),
     )
 }
 
@@ -43,21 +46,25 @@ fn setup(
 ) {
     // can't use spawn bundle for some reason (think b/c passing in mat and mesh)
     commands.spawn(make_planet(
-        Body::new(1000., Vec2::new(-50., 0.), Vec2::new(0., -10.)),
+        Transform::from_translation(Vec3::new(-50., 0., 0.)),
+        Mass(10.),
+        Velocity(Vec2::new(0., -10.)),
         &mut materials,
         &mut meshes,
     ));
     commands.spawn(make_planet(
-        Body::new(100., Vec2::new(100., 0.), Vec2::new(-10., 0.)),
+        Transform::from_translation(Vec3::new(100., 0., 0.)),
+        Mass(100.),
+        Velocity(Vec2::new(-10., 0.)),
         &mut materials,
         &mut meshes,
     ));
 }
 
 /// radius determined by mass
-fn determine_radius(body: &Body) -> f32 {
+fn determine_radius(mass: &Mass) -> f32 {
     let modifier = 100.;
-    let radius = (body.mass / modifier).trunc() + 1.;
+    let radius = (mass.0 / modifier).trunc() + 1.;
     info!("radius is {}", radius);
     radius
 }

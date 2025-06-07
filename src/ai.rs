@@ -1,12 +1,12 @@
 use crate::{
     AppState, SystemUpdateSet,
-    body::Body,
     data_tbl::{
-        blueprint::{BlueprintRegistry, BlueprintTable},
+        blueprint::{BlueprintRegistry, BlueprintTable, BlueprintType},
         data::{DataRegistry, DataTable},
     },
     player::Player,
     ship::{self, Ship, ShipType},
+    velocity::{AngularVelocity, Velocity},
 };
 use bevy::prelude::*;
 
@@ -21,42 +21,52 @@ impl Plugin for AiPlugin {
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     blueprint_registry: Res<BlueprintRegistry>,
     blueprint_table: Res<Assets<BlueprintTable>>,
     data_registry: Res<DataRegistry>,
     data_table: Res<Assets<DataTable>>,
 ) {
-    ship::spawn_ship(
-        &ShipType::Interceptor,
-        Body::new(1000., Vec2::new(-200., 0.), Vec2::new(10., 0.)),
-        &mut materials,
-        &mut meshes,
-        &mut commands,
-    );
-
-    ship::spawn_ship(
-        &ShipType::Interceptor,
-        Body::new(1000., Vec2::new(-200., 0.), Vec2::new(10., 0.)),
-        &mut materials,
-        &mut meshes,
-        &mut commands,
-    );
-
-    if let Some(ship) = ship::spawn_ship_from_blueprint(
+    ship::spawn_ship_from_blueprint(
         "ship_1",
-        Body::new(1., Vec2::new(0., 10.), Vec2::ZERO),
+        &BlueprintType::TransformVelocity(
+            Transform::from_translation(Vec3::new(-200., 0., 0.)),
+            Velocity(Vec2::new(10., 0.)),
+            AngularVelocity(0.),
+        ),
         &blueprint_registry,
         &blueprint_table,
         &data_registry,
         &data_table,
         &mut commands,
-    ) {
-        commands.entity(ship).log_components();
-        commands.entity(ship).insert(Name::new("SHIIP"));
-        info!("added shiip! :)");
-    }
+    );
+
+    ship::spawn_ship_from_blueprint(
+        "ship_2",
+        &BlueprintType::TransformVelocity(
+            Transform::from_translation(Vec3::new(200., 0., 0.)),
+            Velocity(Vec2::new(10., 0.)),
+            AngularVelocity(0.),
+        ),
+        &blueprint_registry,
+        &blueprint_table,
+        &data_registry,
+        &data_table,
+        &mut commands,
+    );
+
+    ship::spawn_ship_from_blueprint(
+        "ship_1",
+        &BlueprintType::TransformVelocity(
+            Transform::from_translation(Vec3::new(0., 10., 0.)),
+            Velocity::ZERO,
+            AngularVelocity(0.),
+        ),
+        &blueprint_registry,
+        &blueprint_table,
+        &data_registry,
+        &data_table,
+        &mut commands,
+    );
 }
 
 #[derive(Component)]
@@ -64,8 +74,8 @@ pub struct Ai {}
 
 /// move ai ships to enemy (just Player for now...)
 fn move_ai(
-    ai: Query<(&Ship, &Body), With<Ai>>,
-    enemy: Query<(&Body), With<Player>>,
+    ai: Query<(&Ship, &Transform), With<Ai>>,
+    enemy: Query<&Transform, With<Player>>,
 ) -> Result<(), BevyError> {
     let enemy = enemy.single()?;
     for (ship, body) in &ai {

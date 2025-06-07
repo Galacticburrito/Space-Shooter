@@ -15,9 +15,11 @@
             speed: 100.,
             damage: 15.,
           ),
-        ))
+        )),
+        Collider((Rectangle(5., 5.))),
       ]
     ),
+
     (
       name: "gun2",
       components:
@@ -33,7 +35,8 @@
             speed: 100.,
             damage: 15.,
           ),
-        ))
+        )),
+        Collider((Rectangle(5., 5.))),
       ]
     ),
   ]

@@ -1,4 +1,4 @@
-use crate::{collision::Collider, color_palette::PalColor};
+use crate::{collider::Collider, color_palette::PalColor};
 use bevy::{
     app::App, gizmos::gizmos::Gizmos, math::bounding::BoundingVolume, prelude::*,
     reflect::GetTypeRegistration,
@@ -22,7 +22,7 @@ pub fn insert_inspectable_resource<T: Resource + Default + Reflect + GetTypeRegi
     initial_val: Option<T>,
     window_display: bool,
 ) {
-    app.insert_resource::<T>(initial_val.unwrap_or(T::default()))
+    app.insert_resource::<T>(initial_val.unwrap_or_default())
         .register_type::<T>();
     if window_display {
         app.add_plugins(ResourceInspectorPlugin::<T>::default());

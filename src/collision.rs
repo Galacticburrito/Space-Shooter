@@ -1,8 +1,5 @@
-use crate::SystemUpdateSet;
-use bevy::{
-    math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
-    prelude::*,
-};
+use crate::{SystemUpdateSet, collider::Collider};
+use bevy::{math::bounding::IntersectsVolume, prelude::*};
 
 pub struct CollisionPlugin {}
 
@@ -10,37 +7,6 @@ impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CollisionEvent>()
             .add_systems(Update, determine_collisions.in_set(SystemUpdateSet::Main));
-    }
-}
-
-#[derive(Component)]
-pub enum Collider {
-    Rectangle(Aabb2d),
-    Circle(BoundingCircle),
-}
-
-impl Collider {
-    pub fn new_rect(width: f32, height: f32) -> Self {
-        let half_width = width / 2.0;
-        let half_height = height / 2.0;
-        Collider::Rectangle(Aabb2d::new(Vec2::ZERO, Vec2::new(half_width, half_height)))
-    }
-
-    pub fn new_circle(radius: f32) -> Self {
-        Collider::Circle(BoundingCircle::new(Vec2::ZERO, radius))
-    }
-
-    fn convert_to_global(&self, g_translation: Vec3) -> Collider {
-        match self {
-            Collider::Rectangle(aabb) => Collider::Rectangle(Aabb2d::new(
-                aabb.center() + g_translation.xy(),
-                aabb.half_size(),
-            )),
-            Collider::Circle(circle) => Collider::Circle(BoundingCircle::new(
-                circle.center + g_translation.xy(),
-                circle.radius(),
-            )),
-        }
     }
 }
 
