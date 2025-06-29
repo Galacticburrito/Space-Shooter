@@ -1,11 +1,15 @@
 use crate::{
     Health,
-    collider::Collider,
+    collision::{
+        collider::{Collider, CollisionLayer},
+        collider_type::ColliderType,
+    },
     primitive::Primitive,
     ship_composition::{
-        bullet::{self, BulletData},
+        bullet::BulletData,
         engine::{Engine, EngineType},
-        gun::{self, Gun, GunData},
+        gun::{Gun, GunData},
+        sonar::{Sonar, sonar_pulse::SonarPulseData},
     },
 };
 use serde::Deserialize;
@@ -56,10 +60,27 @@ impl GunRaw {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct ColliderRaw(Primitive);
+pub struct ColliderRaw {
+    bounding: Primitive,
+    collision_layer: CollisionLayer,
+}
 
 impl ColliderRaw {
     pub fn concrete(&self) -> Collider {
-        Collider::from(self.0.clone())
+        Collider::new(
+            ColliderType::from(self.bounding.clone()),
+            self.collision_layer.clone(),
+        )
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct SonarRaw {
+    pulse_data: SonarPulseData,
+}
+
+impl SonarRaw {
+    pub fn concrete(&self) -> Sonar {
+        Sonar::new(self.pulse_data.clone())
     }
 }

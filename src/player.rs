@@ -5,11 +5,12 @@ use crate::{
         data::{DataRegistry, DataTable},
     },
     global::GlobalVelocity,
-    ship::{self, ShipType},
+    ship,
     ship_composition::{
         bullet::BulletAssets,
         engine::{Engine, EngineType},
         gun::Gun,
+        sonar::Sonar,
     },
     velocity::{AngularVelocity, Velocity},
 };
@@ -22,7 +23,8 @@ impl Plugin for PlayerPlugin {
         app.add_systems(OnEnter(AppState::GameReady), setup);
         app.add_systems(
             Update,
-            (player_accelerate, player_rotate, player_shoot).in_set(SystemUpdateSet::Main),
+            (player_accelerate, player_rotate, player_shoot, player_sonar)
+                .in_set(SystemUpdateSet::Main),
         );
     }
 }
@@ -141,7 +143,6 @@ fn player_rotate(
 }
 
 /// if space bar pressed, have player main gun shoot
-/// TODO: move most of this logic to gun and bullet.rs
 fn player_shoot(
     player: Query<(Entity, &Children), With<Player>>,
     guns: Query<(&Gun, &GlobalTransform, &GlobalVelocity)>,
@@ -161,6 +162,25 @@ fn player_shoot(
                     g_velocity,
                     &bullet_assets,
                 );
+            }
+        }
+    }
+    Ok(())
+}
+
+/// if q key pressed, sonar pulse erupts
+fn player_sonar(
+    player: Query<&Children, With<Player>>,
+    sonars: Query<(Entity, &Sonar)>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+) -> Result<(), BevyError> {
+    if keys.just_pressed(KeyCode::KeyQ) {
+        let p_children = player.single()?;
+
+        for &child in p_children {
+            if let Ok((entity, sonar)) = sonars.get(child) {
+                sonar.pulse(entity, &mut commands);
             }
         }
     }

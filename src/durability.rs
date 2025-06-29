@@ -1,4 +1,3 @@
-use crate::SystemUpdateSet;
 use bevy::prelude::*;
 
 pub struct DurabilityPlugin {}

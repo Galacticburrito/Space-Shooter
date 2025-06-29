@@ -1,9 +1,9 @@
 use super::raw;
 use crate::{
     Health,
-    collider::Collider,
+    collision::collider::Collider,
     graphic::Graphic,
-    ship_composition::{engine::Engine, gun::Gun},
+    ship_composition::{engine::Engine, gun::Gun, sonar::Sonar},
 };
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -17,6 +17,7 @@ pub enum ComponentData {
     Gun(raw::GunRaw),
     Graphic(Graphic),
     Collider(raw::ColliderRaw),
+    Sonar(raw::SonarRaw),
 }
 
 impl ComponentData {
@@ -27,6 +28,7 @@ impl ComponentData {
             Self::Gun(gun) => ComponentConcrete::Gun(gun.concrete()),
             Self::Graphic(graphic) => ComponentConcrete::Graphic(graphic.clone()),
             Self::Collider(collider) => ComponentConcrete::Collider(collider.concrete()),
+            Self::Sonar(sonar) => ComponentConcrete::Sonar(sonar.concrete()),
         }
     }
 }
@@ -37,6 +39,7 @@ pub enum ComponentConcrete {
     Gun(Gun),
     Graphic(Graphic),
     Collider(Collider),
+    Sonar(Sonar),
 }
 
 pub fn add_components_to_entity(entity: &mut EntityCommands, components: &[ComponentData]) {
@@ -57,6 +60,9 @@ pub fn add_components_to_entity(entity: &mut EntityCommands, components: &[Compo
             }
             ComponentConcrete::Collider(collider) => {
                 entity.insert(collider.clone());
+            }
+            ComponentConcrete::Sonar(sonar) => {
+                entity.insert(sonar.clone());
             }
         }
     }

@@ -1,5 +1,5 @@
 [package]
-name = "shooter"
+name = "space_shooter"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,10 +11,11 @@ opt-level = 3
 opt-level = 1
 
 [dependencies]
-bevy= "0.16"
+bevy = "0.16"
 bevy-inspector-egui = "0.31.0"
 bevy_egui = "0.34.0"
 bevy_common_assets = { version = "0.13.0", features = ["ron"] }
 serde = "1.0.219"
 ron = "0.10.1"
 rand = "0.9.0"
+bevy_behave = "0.3.0"

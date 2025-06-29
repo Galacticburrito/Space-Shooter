@@ -1,9 +1,11 @@
+use crate::ship_composition::sonar::SonarDetectable;
 use crate::{
     AppState,
     data_tbl::{
         blueprint::{self, BlueprintKey, BlueprintRegistry, BlueprintTable, BlueprintType},
         data::{self, DataKey, DataRegistry, DataTable},
     },
+    health::PropagateHealth,
 };
 use bevy::prelude::*;
 
@@ -17,7 +19,7 @@ impl Plugin for ShipPlugin {
 
 fn setup() {}
 
-/// depricated
+/// depricated, if can use spawn_ship_from_blueprint instead
 pub fn spawn_ship_from_data(
     parts: &Vec<(DataKey, String)>,
     registry: &Res<DataRegistry>,
@@ -45,13 +47,6 @@ pub fn spawn_ship_from_blueprint(
     data_table: &Res<Assets<DataTable>>,
     commands: &mut Commands,
 ) -> Option<Entity> {
-    /*
-     * TODO: Need these to get this up to spawn_ship()
-     * collider
-     * shape (mesh)
-     * name
-     *
-     */
     let ship = blueprint::entity_from_blueprint(
         &BlueprintKey::Ship,
         value,
@@ -63,28 +58,16 @@ pub fn spawn_ship_from_blueprint(
         commands,
     )?;
 
-    commands.entity(ship).insert((Ship {
-        ship_type: ShipType::Interceptor,
-    },));
+    commands
+        .entity(ship)
+        .insert((Ship {}, SonarDetectable::new(), PropagateHealth::new()));
 
     Some(ship)
 }
 
 #[derive(Component, Reflect)]
-pub struct Ship {
-    ship_type: ShipType,
-}
-
-impl Ship {
-    pub fn new(ship_type: &ShipType) -> Self {
-        let ship_type = ship_type.clone();
-        match ship_type {
-            ShipType::Interceptor => Ship { ship_type },
-            ShipType::Gunship => Ship { ship_type },
-            ShipType::MissileBoat => Ship { ship_type },
-        }
-    }
-}
+#[require(SonarDetectable)]
+pub struct Ship {}
 
 #[derive(Clone, Reflect)]
 pub enum ShipType {

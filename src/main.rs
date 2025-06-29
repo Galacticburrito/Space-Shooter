@@ -1,19 +1,19 @@
+use bevy::ecs::intern::Interned;
 use bevy::prelude::*;
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, ecs::schedule::InternedSystemSet};
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, ecs::schedule::ScheduleConfigs};
+use bevy_behave::prelude::BehavePlugin;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 mod color_palette;
-use color_palette::PalColor;
 mod player;
 mod velocity;
 use player::Player;
 mod camera;
-mod collision;
 mod debug;
 mod health;
 use health::{Damage, Health};
 mod ai;
-mod collider;
+mod collision;
 mod data_tbl;
 mod durability;
 mod global;
@@ -26,6 +26,7 @@ mod primitive;
 mod record;
 mod rotation;
 mod schedule;
+mod serialization;
 mod ship;
 mod ship_composition;
 mod space;
@@ -52,10 +53,10 @@ fn main() {
         },
         FrameTimeDiagnosticsPlugin::default(),
         WorldInspectorPlugin::new(),
+        BehavePlugin::new(Update),
     ))
     // internal
     .add_plugins((
-        debug::DebugPlugin {},
         camera::CameraPlugin {},
         space::SpacePlugin {},
         velocity::VelocityPlugin {},
@@ -71,6 +72,8 @@ fn main() {
         ship_composition::ShipCompositionPlugin {},
         graphic::GraphicPlugin {},
     ))
+    // debug
+    .add_plugins((debug::DebugPlugin {},))
     .configure_sets(Update, SystemUpdateSet::configuration())
     .configure_sets(FixedUpdate, SystemUpdateSet::configuration())
     .init_state::<AppState>();
@@ -83,21 +86,21 @@ fn main() {
 #[derive(SystemSet, Debug, Clone, PartialEq, Hash, Eq)]
 pub enum SystemUpdateSet {
     Main,
-    Body,
+    Early,
     Camera,
 }
 
 impl SystemUpdateSet {
     fn configuration() -> (
-        bevy::ecs::schedule::ScheduleConfigs<bevy::ecs::intern::Interned<dyn SystemSet>>,
-        bevy::ecs::schedule::ScheduleConfigs<bevy::ecs::intern::Interned<dyn SystemSet>>,
-        bevy::ecs::schedule::ScheduleConfigs<bevy::ecs::intern::Interned<dyn SystemSet>>,
+        ScheduleConfigs<Interned<dyn SystemSet>>,
+        ScheduleConfigs<Interned<dyn SystemSet>>,
+        ScheduleConfigs<Interned<dyn SystemSet>>,
     ) {
         (
             SystemUpdateSet::Main
-                .before(SystemUpdateSet::Body)
+                .before(SystemUpdateSet::Early)
                 .run_if(in_state(AppState::GameReady)),
-            SystemUpdateSet::Body
+            SystemUpdateSet::Early
                 .before(SystemUpdateSet::Camera)
                 .run_if(in_state(AppState::GameReady)),
             SystemUpdateSet::Camera.run_if(in_state(AppState::GameReady)),

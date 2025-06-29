@@ -1,21 +1,20 @@
 use crate::{
-    AppState, SystemUpdateSet,
+    AppState,
     data_tbl::{
         blueprint::{BlueprintRegistry, BlueprintTable, BlueprintType},
         data::{DataRegistry, DataTable},
     },
-    player::Player,
-    ship::{self, Ship, ShipType},
+    ship,
     velocity::{AngularVelocity, Velocity},
 };
 use bevy::prelude::*;
+use bevy_behave::prelude::BehaveTree;
 
-pub struct AiPlugin {}
+pub struct SetupPlugin {}
 
-impl Plugin for AiPlugin {
+impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::GameReady), setup)
-            .add_systems(Update, move_ai.in_set(SystemUpdateSet::Main));
+        app.add_systems(OnEnter(AppState::GameReady), setup);
     }
 }
 
@@ -27,7 +26,7 @@ fn setup(
     data_table: Res<Assets<DataTable>>,
 ) {
     ship::spawn_ship_from_blueprint(
-        "ship_1",
+        "ship_2",
         &BlueprintType::TransformVelocity(
             Transform::from_translation(Vec3::new(-200., 0., 0.)),
             Velocity(Vec2::new(10., 0.)),
@@ -54,7 +53,7 @@ fn setup(
         &mut commands,
     );
 
-    ship::spawn_ship_from_blueprint(
+    if let Some(ai_ship) = ship::spawn_ship_from_blueprint(
         "ship_1",
         &BlueprintType::TransformVelocity(
             Transform::from_translation(Vec3::new(0., 10., 0.)),
@@ -66,20 +65,7 @@ fn setup(
         &data_registry,
         &data_table,
         &mut commands,
-    );
-}
-
-#[derive(Component)]
-pub struct Ai {}
-
-/// move ai ships to enemy (just Player for now...)
-fn move_ai(
-    ai: Query<(&Ship, &Transform), With<Ai>>,
-    enemy: Query<&Transform, With<Player>>,
-) -> Result<(), BevyError> {
-    let enemy = enemy.single()?;
-    for (ship, body) in &ai {
-        // move ship to player, another system to shoot?
+    ) {
+        super::ai_ship_tree::add_ai_ship_tree(ai_ship, &mut commands, false);
     }
-    Ok(())
 }

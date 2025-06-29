@@ -13,7 +13,7 @@ impl Plugin for VelocityPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (update_velocity, update_angular_velocity).in_set(SystemUpdateSet::Body),
+            (update_velocity, update_angular_velocity).in_set(SystemUpdateSet::Early),
         )
         .add_observer(add_velocity_to_transform)
         .add_observer(add_angular_velocity_to_transform)

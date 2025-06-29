@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use crate::{collider::Collider, color_palette::PalColor, primitive::Primitive};
+use crate::{SystemUpdateSet, color_palette::PalColor, primitive::Primitive};
 
 pub struct GraphicPlugin {}
 
 impl Plugin for GraphicPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, add_mesh_and_material);
+        app.add_systems(Update, graphic_changed.in_set(SystemUpdateSet::Main));
     }
 }
 
@@ -20,13 +20,23 @@ pub struct Graphic {
 }
 
 impl Graphic {
-    pub fn new(shape: Primitive, color: PalColor) -> Graphic {
+    pub fn new(shape: Primitive, color: PalColor) -> Self {
         Graphic { shape, color }
+    }
+
+    /// replaces current graphic color with new one
+    pub fn replace_color(&mut self, color: PalColor) {
+        self.color = color;
+    }
+
+    /// replaces current shape with new one
+    pub fn replace_shape(&mut self, shape: Primitive) {
+        self.shape = shape;
     }
 
     /// adds the shape and color to assets
     /// can run in command.spawn() to add necessary components
-    pub fn add_mesh_and_material(
+    fn add_mesh_and_material(
         &self,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<ColorMaterial>>,
@@ -38,19 +48,17 @@ impl Graphic {
     }
 }
 
-/// adds required components for rendering when a Graphic is added
-fn add_mesh_and_material(
-    query: Query<(Entity, &Graphic), Added<Graphic>>,
+/// adds required components for rendering when a Graphic is changed
+/// allows changes to meshes and materials during runtime by changing Graphic itself
+fn graphic_changed(
+    query: Query<(Entity, &Graphic), Changed<Graphic>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
 ) {
     for (entity, graphic) in query {
-        let mesh = meshes.add(graphic.shape.clone());
-        let material = materials.add(graphic.color);
+        let (mesh, material) = graphic.add_mesh_and_material(&mut meshes, &mut materials);
 
-        commands
-            .entity(entity)
-            .insert((Mesh2d(mesh), MeshMaterial2d(material)));
+        commands.entity(entity).try_insert((mesh, material));
     }
 }

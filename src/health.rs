@@ -1,4 +1,4 @@
-use crate::{AppState, SystemUpdateSet};
+use crate::SystemUpdateSet;
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -6,12 +6,12 @@ pub struct HealthPlugin {}
 
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::GameReady), max_propagate_health)
-            .add_systems(
-                Update,
-                (propagate_health, apply_damage).in_set(SystemUpdateSet::Main),
-            )
-            .register_type::<Health>();
+        app.add_systems(
+            Update,
+            (propagate_health, apply_damage).in_set(SystemUpdateSet::Main),
+        )
+        .add_observer(propagate_health_constructor)
+        .register_type::<Health>();
     }
 }
 
@@ -70,25 +70,47 @@ fn apply_damage(
 
 /// total health determined by health of children (1 layer down)
 /// Health component itself not needed
-#[derive(Component)]
+//TODO: make propagate logic ignore Killed
+#[derive(Component, Clone)]
 pub struct PropagateHealth {
     current: f32,
     max: f32,
 }
 
-//TODO: make propagate logic ignore Killed
+impl PropagateHealth {
+    /// don't need init current and max, propagate_health_constructor does that for us
+    pub fn new() -> Self {
+        PropagateHealth {
+            current: 0.,
+            max: 0.,
+        }
+    }
 
-/// sum up total health of children (1 layer down), so get total max
-fn max_propagate_health(
-    mut parent: Query<(&mut PropagateHealth, &Children)>,
+    /// what percent of health left?
+    pub fn percent(&self) -> f32 {
+        self.current / self.max
+    }
+}
+
+/// sum up total health of children (1 layer down)
+fn propagate_health_constructor(
+    trigger: Trigger<OnInsert, PropagateHealth>,
+    mut parent_query: Query<(&mut PropagateHealth, &Children)>,
     health_query: Query<&Health>,
 ) {
-    for (mut parent_health, children) in &mut parent {
-        parent_health.max = 0.;
-        for &child in children {
-            if let Ok(child_health) = health_query.get(child) {
-                parent_health.max += child_health.current;
-            }
+    let parent_entity = trigger.target();
+
+    let Ok((mut propagate_health, children)) = parent_query.get_mut(parent_entity) else {
+        warn!("this entity that was given PropagateHealth has no children!");
+        return;
+    };
+
+    propagate_health.max = 0.;
+    propagate_health.current = 0.;
+    for &child in children {
+        if let Ok(child_health) = health_query.get(child) {
+            propagate_health.max += child_health.max;
+            propagate_health.current += child_health.current;
         }
     }
 }

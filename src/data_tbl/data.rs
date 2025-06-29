@@ -1,4 +1,4 @@
-use super::component_data::{self, ComponentConcrete, ComponentData};
+use super::component_data::{self, ComponentData};
 use crate::{AppState, iterable_enum::IterableEnum};
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
@@ -35,6 +35,7 @@ pub struct DataTable(Vec<DataEntry>);
 pub enum DataKey {
     Engine,
     Gun,
+    Sonar,
 }
 
 impl DataKey {
@@ -42,15 +43,16 @@ impl DataKey {
         match self {
             Self::Engine => "engine",
             Self::Gun => "gun",
+            Self::Sonar => "sonar",
         }
         .to_owned()
     }
 }
 
 impl IterableEnum for DataKey {
-    type Iter = std::array::IntoIter<DataKey, 2>;
+    type Iter = std::array::IntoIter<DataKey, 3>;
     fn iter() -> Self::Iter {
-        [DataKey::Engine, DataKey::Gun].into_iter()
+        [DataKey::Engine, DataKey::Gun, DataKey::Sonar].into_iter()
     }
 }
 

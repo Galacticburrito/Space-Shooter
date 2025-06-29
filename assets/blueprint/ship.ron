@@ -7,14 +7,18 @@
           shape: Rectangle(20., 10.), 
           color: Random,
         )),
-        Collider((Rectangle(20., 10.))),
+        Collider((
+          bounding: Rectangle(20., 10.),
+          collision_layer: Ship,
+        )),
       ],
       modules:[],
       children:
       [
-        (Engine, "engine_mk1"),
-        (Engine, "thruster_mk1"),
-        (Gun, "gun1"),
+        (Engine, "engine_1"),
+        (Engine, "thruster_1"),
+        (Gun, "gun_1"),
+        (Sonar, "sonar_1"),
       ]
     ),
 
@@ -24,8 +28,9 @@
       modules:[],
       children:
       [
-        (Engine, "engine_mk2"),
-        (Gun, "gun2"),
+        (Engine, "engine_2"),
+        (Gun, "gun_2"),
+        (Sonar, "sonar_1"),
       ]
     ),
   ]

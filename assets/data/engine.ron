@@ -1,47 +1,56 @@
 (
   [
     (
-      name: "engine_mk1",
+      name: "engine_1",
       components:
       [
         Health((max: 100.)),
-        Engine ((
+        Engine((
           engine_type: Main,
           max_thrust: 10.,
           max_acceleration: 50.,
           reverse_percent: 0.,
         )),
-        Collider((Rectangle(5., 5.))),
+        Collider((
+          bounding: Rectangle(5., 5.),
+          collision_layer: ShipComponent,
+        )),
       ]
     ),
 
     (
-      name: "engine_mk2",
+      name: "engine_2",
       components:
       [
         Health((max: 100.)),
-        Engine ((
+        Engine((
           engine_type: Main,
           max_thrust: 20.,
           max_acceleration: 50.,
           reverse_percent: 0.,
         )),
-        Collider((Rectangle(5., 5.))),
+        Collider((
+          bounding: Rectangle(5., 5.),
+          collision_layer: ShipComponent,
+        )),
       ],
     ),
 
     (
-      name: "thruster_mk1",
+      name: "thruster_1",
       components:
       [
         Health((max: 100.)),
-        Engine ((
+        Engine((
           engine_type: Thruster,
           max_thrust: 0.5,
           max_acceleration: 1.,
           reverse_percent: 1.,
         )),
-        Collider((Rectangle(5., 5.))),
+        Collider((
+          bounding: Rectangle(5., 5.),
+          collision_layer: ShipComponent,
+        )),
       ]
     )
   ]

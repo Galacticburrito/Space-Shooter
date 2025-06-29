@@ -7,21 +7,26 @@ pub enum Primitive {
     /// length, width
     Rectangle(f32, f32),
     Circle(Circle),
+    Ring(Annulus),
 }
 
 impl Primitive2d for Primitive {}
 
-/// automatically convert Rectangle to Primitive when using ::from()
 impl From<Rectangle> for Primitive {
     fn from(value: Rectangle) -> Self {
         Primitive::Rectangle(value.size().x, value.size().y)
     }
 }
 
-/// automatically convert Circle to Primitive when using ::from()
 impl From<Circle> for Primitive {
     fn from(value: Circle) -> Self {
         Primitive::Circle(value)
+    }
+}
+
+impl From<Annulus> for Primitive {
+    fn from(value: Annulus) -> Self {
+        Primitive::Ring(value)
     }
 }
 
@@ -30,6 +35,7 @@ impl From<Primitive> for Mesh {
         match value {
             Primitive::Rectangle(x, y) => rectangle(x, y).into(),
             Primitive::Circle(cir) => cir.into(),
+            Primitive::Ring(ring) => ring.into(),
         }
     }
 }

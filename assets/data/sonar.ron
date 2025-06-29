@@ -1,0 +1,23 @@
+(
+  [
+    (
+      name: "sonar_1",
+      components:
+      [
+        Health((max: 100.)),
+        Sonar((
+          pulse_data:
+          (
+            thickness: 1.,
+            speed: 50.,
+            range: 500.,
+          ) 
+        )),
+        Collider((
+          bounding: Rectangle(5., 5.),
+          collision_layer: ShipComponent,
+        )),
+      ]
+    ),
+  ]
+)

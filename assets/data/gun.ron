@@ -1,7 +1,7 @@
 (
   [
     (
-      name: "gun1",
+      name: "gun_1",
       components:
       [
         Health((max: 100.)),
@@ -16,12 +16,15 @@
             damage: 15.,
           ),
         )),
-        Collider((Rectangle(5., 5.))),
+        Collider((
+          bounding: Rectangle(5., 5.),
+          collision_layer: ShipComponent,
+        )),
       ]
     ),
 
     (
-      name: "gun2",
+      name: "gun_2",
       components:
       [
         Health((max: 100.)),
@@ -36,7 +39,10 @@
             damage: 15.,
           ),
         )),
-        Collider((Rectangle(5., 5.))),
+        Collider((
+          bounding: Rectangle(5., 5.),
+          collision_layer: ShipComponent,
+        )),
       ]
     ),
   ]

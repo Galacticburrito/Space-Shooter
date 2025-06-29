@@ -1,7 +1,15 @@
 use super::bullet::{Bullet, BulletAssets, BulletData};
 use crate::{
-    SystemUpdateSet, collider::Collider, global::GlobalVelocity, lifetime::Lifetime, mass::Mass,
-    rotation, velocity::Velocity,
+    SystemUpdateSet,
+    collision::{
+        collider::{Collider, CollisionLayer},
+        collider_type::ColliderType,
+    },
+    global::GlobalVelocity,
+    lifetime::Lifetime,
+    mass::Mass,
+    rotation,
+    velocity::Velocity,
 };
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -96,14 +104,7 @@ impl Gun {
         commands: &mut Commands,
         bullet_assets: &Res<BulletAssets>,
     ) {
-        let mesh_handle = bullet_assets
-            .meshes
-            .get(&self.bullet_data.bullet_type)
-            .unwrap();
-        let material_handle = bullet_assets
-            .materials
-            .get(&self.bullet_data.bullet_type)
-            .unwrap();
+        let graphic = bullet_assets.0.get(&self.bullet_data.bullet_type).unwrap();
 
         let g_position = g_transform.translation().xy();
 
@@ -118,10 +119,9 @@ impl Gun {
             Transform::from_translation(Vec3::new(g_position.x, g_position.y, 0.)),
             Mass(1.),
             Velocity(velocity),
-            Collider::new_rect(2., 2.),
+            Collider::new(ColliderType::new_rect(2., 2.), CollisionLayer::Bullet),
             Lifetime::new(5.),
-            MeshMaterial2d(material_handle.clone()),
-            Mesh2d(mesh_handle.clone()),
+            graphic.clone(),
         ));
     }
 }

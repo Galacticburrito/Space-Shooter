@@ -2,7 +2,7 @@ use crate::{
     SystemUpdateSet,
     health::Health,
     rotation,
-    ship::{Ship, ShipType},
+    ship::Ship,
     velocity::{AngularVelocity, Velocity},
 };
 use bevy::prelude::*;

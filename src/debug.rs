@@ -1,4 +1,7 @@
-use crate::{collider::Collider, color_palette::PalColor};
+use crate::{
+    collision::{collider::Collider, collider_type::ColliderType},
+    color_palette::PalColor,
+};
 use bevy::{
     app::App, gizmos::gizmos::Gizmos, math::bounding::BoundingVolume, prelude::*,
     reflect::GetTypeRegistration,
@@ -11,7 +14,7 @@ impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
         // don't care when these run
         app.add_systems(Startup, draw_grid)
-            .add_systems(Update, (show_rotation, show_colliders));
+            .add_systems(Update, (show_rotation, show_colliders, pause_game));
     }
 }
 
@@ -77,25 +80,47 @@ fn show_rotation(query: Query<&Transform>, mut gizmo: Gizmos) {
     }
 }
 
-fn show_colliders(query: Query<(&GlobalTransform, &Collider)>, mut gizmo: Gizmos) {
-    for (transform, collider) in &query {
+fn show_colliders(query: Query<(&GlobalTransform, &Collider, &Visibility)>, mut gizmo: Gizmos) {
+    for (transform, collider, visibility) in &query {
         let center = transform.translation().xy();
         let angle_rad = transform.rotation().to_euler(EulerRot::XYZ).2;
-        match collider {
-            Collider::Rectangle(aabb) => {
+        match collider.bounding {
+            ColliderType::Rectangle(aabb) => {
                 gizmo.rect_2d(
                     Isometry2d::new(center, Rot2::radians(angle_rad)),
                     aabb.half_size() * 2.,
                     PalColor::Green,
                 );
             }
-            Collider::Circle(bounding_circle) => {
+            ColliderType::Circle(bounding_circle) => {
                 gizmo.circle_2d(
                     Isometry2d::from_translation(center),
                     bounding_circle.radius(),
                     PalColor::Green,
                 );
             }
+            ColliderType::Ring(inner, outer) => {
+                gizmo.circle_2d(
+                    Isometry2d::from_translation(center),
+                    inner.radius(),
+                    PalColor::Green,
+                );
+                gizmo.circle_2d(
+                    Isometry2d::from_translation(center),
+                    outer.radius(),
+                    PalColor::Green,
+                );
+            }
         };
+    }
+}
+
+fn pause_game(mut time: ResMut<Time<Virtual>>, input: Res<ButtonInput<KeyCode>>) {
+    if input.just_pressed(KeyCode::KeyP) {
+        if time.is_paused() {
+            time.unpause();
+        } else {
+            time.pause();
+        }
     }
 }

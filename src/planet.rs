@@ -1,7 +1,11 @@
 use crate::{
     AppState, Health,
-    collider::Collider,
-    color_palette,
+    collision::{
+        collider::{Collider, CollisionLayer},
+        collider_type::ColliderType,
+    },
+    color_palette::PalColor,
+    graphic::Graphic,
     mass::Mass,
     space::{Gravitated, GravitySource},
     velocity::Velocity,
@@ -16,48 +20,31 @@ impl Plugin for PlanetPlugin {
     }
 }
 
-fn make_planet(
-    transform: Transform,
-    mass: Mass,
-    velocity: Velocity,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    meshes: &mut ResMut<Assets<Mesh>>,
-) -> impl Bundle {
+fn make_planet(transform: Transform, mass: Mass, velocity: Velocity) -> impl Bundle {
     let radius = determine_radius(&mass);
-    let color = materials.add(color_palette::random_color());
-    let shape = meshes.add(Circle::new(radius));
+    let graphic = Graphic::new(Circle::new(radius).into(), PalColor::Random);
     (
         Name::new("Planet"),
         transform,
         velocity.clone(),
         GravitySource {},
         Gravitated {},
-        MeshMaterial2d(color),
-        Mesh2d(shape),
-        Collider::new_circle(radius),
+        graphic,
+        Collider::new(ColliderType::new_circle(radius), CollisionLayer::Planet),
         Health::new(1000.),
     )
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    // can't use spawn bundle for some reason (think b/c passing in mat and mesh)
+fn setup(mut commands: Commands) {
     commands.spawn(make_planet(
         Transform::from_translation(Vec3::new(-50., 0., 0.)),
         Mass(10.),
         Velocity(Vec2::new(0., -10.)),
-        &mut materials,
-        &mut meshes,
     ));
     commands.spawn(make_planet(
         Transform::from_translation(Vec3::new(100., 0., 0.)),
         Mass(100.),
         Velocity(Vec2::new(-10., 0.)),
-        &mut materials,
-        &mut meshes,
     ));
 }
 

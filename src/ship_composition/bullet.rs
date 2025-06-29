@@ -1,6 +1,6 @@
 use crate::{
-    AppState, Damage, PalColor, SystemUpdateSet, collision::CollisionEvent, health::Health,
-    lifetime::Lifetime, velocity::Velocity,
+    AppState, Damage, SystemUpdateSet, collision::CollisionEvent, color_palette::PalColor,
+    graphic::Graphic, health::Health, lifetime::Lifetime, velocity::Velocity,
 };
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -15,42 +15,26 @@ impl Plugin for BulletPlugin {
     }
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    let mut bullet_assets = BulletAssets {
-        meshes: HashMap::new(),
-        materials: HashMap::new(),
-    };
+fn setup(mut commands: Commands) {
+    let mut bullet_assets = BulletAssets(HashMap::new());
 
     // laser bullet
-    bullet_assets
-        .meshes
-        .insert(BulletType::Laser, meshes.add(Circle::new(2.0)));
-    bullet_assets.materials.insert(
+    bullet_assets.0.insert(
         BulletType::Laser,
-        materials.add(Into::<ColorMaterial>::into(PalColor::Red)),
+        Graphic::new(Circle::new(2.0).into(), PalColor::Red),
     );
 
     // missile bullet
-    bullet_assets.meshes.insert(
+    // missiles are bigger
+    bullet_assets.0.insert(
         BulletType::Missile,
-        meshes.add(Circle::new(3.0)), // missiles are bigger
-    );
-    bullet_assets.materials.insert(
-        BulletType::Missile,
-        materials.add(Into::<ColorMaterial>::into(PalColor::White)),
+        Graphic::new(Circle::new(3.0).into(), PalColor::White),
     );
     commands.insert_resource(bullet_assets);
 }
 
 #[derive(Resource)]
-pub struct BulletAssets {
-    pub meshes: HashMap<BulletType, Handle<Mesh>>,
-    pub materials: HashMap<BulletType, Handle<ColorMaterial>>,
-}
+pub struct BulletAssets(pub HashMap<BulletType, Graphic>);
 
 /// data that is carried by gun, then copied over to fired bullet
 #[derive(Clone, Debug, Deserialize, Reflect)]
@@ -83,7 +67,7 @@ impl Bullet {
     pub fn new(bullet_data: BulletData, shooter: &Entity) -> Self {
         Bullet {
             bullet_data,
-            shooter: shooter.clone(),
+            shooter: *shooter,
         }
     }
 }
@@ -115,7 +99,7 @@ fn bullet_collide(
                     collision.1,
                     children_query,
                     &mut commands,
-                    &world,
+                    world,
                 );
             }
             (None, Some(bullet_2)) => {
@@ -125,7 +109,7 @@ fn bullet_collide(
                     collision.0,
                     children_query,
                     &mut commands,
-                    &world,
+                    world,
                 );
             }
             (None, None) => {}
@@ -149,7 +133,7 @@ fn apply_bullet_hit(
     // check if other is descendant of shooter
     if let Ok(shooter_children) = children_query.get(bullet.shooter) {
         for child in shooter_children {
-            if child.clone() == other {
+            if *child == other {
                 return;
             }
         }

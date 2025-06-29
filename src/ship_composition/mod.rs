@@ -2,6 +2,7 @@ use bevy::prelude::*;
 pub mod bullet;
 pub mod engine;
 pub mod gun;
+pub mod sonar;
 
 pub struct ShipCompositionPlugin {}
 
@@ -11,6 +12,7 @@ impl Plugin for ShipCompositionPlugin {
             bullet::BulletPlugin {},
             engine::EnginePlugin {},
             gun::GunPlugin {},
+            sonar::SonarPlugin {},
         ));
     }
 }
