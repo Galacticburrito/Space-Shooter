@@ -4,3 +4,4 @@ Simple top-down space game I'm working on as I learn more about Rust and Bevy Ga
 Planned Features:
 - Modular ships, with separate damageable components
 - Gravity, affecting trajectories of ships and planets
+- Sonar, affecting player vision and knowledge of the battlefield
