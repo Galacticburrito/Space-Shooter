@@ -1,0 +1,5 @@
+GlobalSettings(
+  gravity_const: 10.,
+  velocity_max: 200.,
+  angular_velocity_max: 20.,
+)
