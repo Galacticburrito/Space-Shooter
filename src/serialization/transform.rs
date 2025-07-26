@@ -24,7 +24,6 @@ impl From<SerializeableTransform> for Transform {
             translation: value.translation,
             rotation: value.rotation,
             scale: value.scale,
-            ..Default::default()
         }
     }
 }

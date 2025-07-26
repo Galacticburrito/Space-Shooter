@@ -1,5 +1,6 @@
 use crate::{
-    SystemUpdateSet, global::GlobalVelocity, serialization::transform::SerializeableTransform,
+    SystemUpdateSet, serialization::transform::SerializeableTransform,
+    velocity::global::GlobalVelocity,
 };
 use bevy::prelude::*;
 use serde::Deserialize;

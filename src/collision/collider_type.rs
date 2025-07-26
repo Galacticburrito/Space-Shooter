@@ -3,7 +3,7 @@ use bevy::math::bounding::{Aabb2d, BoundingCircle, BoundingVolume};
 use bevy::prelude::*;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Reflect, Debug, Deserialize, Clone)]
 pub enum ColliderType {
     Rectangle(Aabb2d),
     Circle(BoundingCircle),
@@ -54,7 +54,7 @@ impl From<Primitive> for ColliderType {
     fn from(value: Primitive) -> Self {
         match value {
             Primitive::Rectangle(x, y) => ColliderType::new_rect(x, y),
-            Primitive::Circle(cir) => ColliderType::new_circle(cir.radius),
+            Primitive::Circle(radius) => ColliderType::new_circle(radius),
             Primitive::Ring(ring) => {
                 ColliderType::new_annulus(ring.inner_circle.radius, ring.outer_circle.radius)
             }

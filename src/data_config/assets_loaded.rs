@@ -37,13 +37,5 @@ fn check_all_assets_loaded(
     if all_loaded {
         info!("All assets loaded. Transitioning to GameReady.");
         next_state.set(AppState::GameReady);
-    } else {
-        // show which assets are still loading.
-        /*
-                let still_loading: Vec<_> = assets_loading.0.iter()
-                .filter(|id| !asset_server.is_loaded_with_dependencies(**id))
-                .collect();
-                debug!("Still loading {} assets: {:?}", still_loading.len(), still_loading);
-        */
     }
 }

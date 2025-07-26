@@ -2,7 +2,7 @@ use super::collider_type::ColliderType;
 use bevy::prelude::*;
 use serde::Deserialize;
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Reflect)]
 pub struct Collider {
     pub bounding: ColliderType,
     pub collision_layer: CollisionLayer,
@@ -25,7 +25,7 @@ impl Collider {
     }
 }
 
-#[derive(Clone, Deserialize, Debug, PartialEq)]
+#[derive(Reflect, Clone, Deserialize, Debug, PartialEq)]
 pub enum CollisionLayer {
     Ship,
     ShipComponent,

@@ -5,11 +5,10 @@ use crate::{
         collider::{Collider, CollisionLayer},
         collider_type::ColliderType,
     },
-    global::GlobalVelocity,
     lifetime::Lifetime,
-    mass::Mass,
     rotation,
-    velocity::Velocity,
+    space::mass::Mass,
+    velocity::{Velocity, global::GlobalVelocity},
 };
 use bevy::prelude::*;
 use serde::Deserialize;

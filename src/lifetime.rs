@@ -15,13 +15,20 @@ impl Plugin for LifetimePlugin {
 #[derive(Component, Reflect)]
 pub struct Lifetime {
     pub timer: Timer,
+    total_time: f32,
 }
 
 impl Lifetime {
     pub fn new(seconds: f32) -> Self {
         Lifetime {
             timer: Timer::from_seconds(seconds, TimerMode::Once),
+            total_time: seconds,
         }
+    }
+
+    /// percentage of lifetime already lived
+    pub fn percent_lived(&self) -> f32 {
+        self.timer.remaining_secs() / self.total_time
     }
 }
 

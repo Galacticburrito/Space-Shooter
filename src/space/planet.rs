@@ -6,8 +6,10 @@ use crate::{
     },
     color_palette::PalColor,
     graphic::Graphic,
-    mass::Mass,
-    space::{Gravitated, GravitySource},
+    space::{
+        gravity::{Gravitated, GravitySource},
+        mass::Mass,
+    },
     velocity::Velocity,
 };
 use bevy::prelude::*;
@@ -22,7 +24,7 @@ impl Plugin for PlanetPlugin {
 
 fn make_planet(transform: Transform, mass: Mass, velocity: Velocity) -> impl Bundle {
     let radius = determine_radius(&mass);
-    let graphic = Graphic::new(Circle::new(radius).into(), PalColor::Random);
+    let graphic = Graphic::new(Circle::new(radius).into(), PalColor::Random.into());
     (
         Name::new("Planet"),
         transform,

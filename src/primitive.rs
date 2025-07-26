@@ -2,11 +2,11 @@ use bevy::prelude::*;
 use serde::Deserialize;
 
 // TODO: integrate with Graphic and Colliders
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Reflect, Debug, Clone)]
 pub enum Primitive {
     /// length, width
     Rectangle(f32, f32),
-    Circle(Circle),
+    Circle(f32),
     Ring(Annulus),
 }
 
@@ -20,7 +20,7 @@ impl From<Rectangle> for Primitive {
 
 impl From<Circle> for Primitive {
     fn from(value: Circle) -> Self {
-        Primitive::Circle(value)
+        Primitive::Circle(value.radius)
     }
 }
 
@@ -33,8 +33,8 @@ impl From<Annulus> for Primitive {
 impl From<Primitive> for Mesh {
     fn from(value: Primitive) -> Self {
         match value {
-            Primitive::Rectangle(x, y) => rectangle(x, y).into(),
-            Primitive::Circle(cir) => cir.into(),
+            Primitive::Rectangle(x, y) => Rectangle::from_size(Vec2::new(x, y)).into(),
+            Primitive::Circle(radius) => Circle::new(radius).into(),
             Primitive::Ring(ring) => ring.into(),
         }
     }

@@ -10,7 +10,8 @@ pub struct CollisionPlugin {}
 impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CollisionEvent>()
-            .add_systems(Update, determine_collisions.in_set(SystemUpdateSet::Main));
+            .add_systems(Update, determine_collisions.in_set(SystemUpdateSet::Main))
+            .register_type::<Collider>();
     }
 }
 
@@ -75,18 +76,53 @@ fn has_collided(collider1: ColliderType, collider2: ColliderType) -> bool {
         }
 
         (ColliderType::Ring(inner1, outer1), ColliderType::Ring(inner2, outer2)) => {
+            //TODO: fix! not work right
             outer1.intersects(&outer2) && !inner1.intersects(&inner2)
         }
 
         (ColliderType::Ring(inner, outer), ColliderType::Circle(circle))
         | (ColliderType::Circle(circle), ColliderType::Ring(inner, outer)) => {
-            outer.intersects(&circle) && !inner.intersects(&circle)
+            // outer.intersects(&circle) && !inner.intersects(&circle)
+            if !outer.intersects(&circle) {
+                return false;
+            }
+
+            // if circle fully within ring (not touching it), then not collision
+            let circle_fully_in_inner =
+                inner.center.distance(circle.center) + circle.radius() <= inner.radius();
+            !circle_fully_in_inner
         }
 
-        (ColliderType::Ring(inner, outer), ColliderType::Rectangle(rectangle))
-        | (ColliderType::Rectangle(rectangle), ColliderType::Ring(inner, outer)) => {
-            outer.intersects(&rectangle) && !inner.intersects(&rectangle)
+        (ColliderType::Ring(inner, outer), ColliderType::Rectangle(aabb))
+        | (ColliderType::Rectangle(aabb), ColliderType::Ring(inner, outer)) => {
+            // outer.intersects(&rectangle) && !inner.intersects(&rectangle)
+            if !outer.intersects(&aabb) {
+                return false;
+            }
+
+            // if rectangle fully within ring (not touching it), then not collision
+            let inner_collider = inner.circle.into();
+            let rect_corners_in_inner = contains_point(&inner_collider, aabb.min)
+                && contains_point(&inner_collider, aabb.max)
+                && contains_point(&inner_collider, Vec2::new(aabb.min.x, aabb.max.y))
+                && contains_point(&inner_collider, Vec2::new(aabb.max.x, aabb.min.y));
+            !rect_corners_in_inner
         }
+    }
+}
+
+/// WARN: for now, only BoundingCircle implimented!
+fn contains_point(collider: &ColliderType, point: Vec2) -> bool {
+    match collider {
+        ColliderType::Circle(circle) => circle.center.distance(point) <= circle.radius(),
+        ColliderType::Rectangle(aabb) => {
+            // inside rect if x is between min.x and max.x, and y is between min.y and max.y
+            point.x >= aabb.min.x
+                && point.x <= aabb.max.x
+                && point.y >= aabb.min.y
+                && point.y <= aabb.max.y
+        }
+        _ => todo!("impliment point detection for collidertype!"),
     }
 }
 
@@ -98,6 +134,7 @@ pub fn collided_with_component<'a, T: Component, Q: QueryFilter>(
 ) -> Option<&'a T> {
     for collision in events.read() {
         let (entity1, entity2) = (collision.0, collision.1);
+        // info!("collision: {} <-> {}", entity1, entity2);
 
         let other_entity = if entity1 == entity {
             entity2

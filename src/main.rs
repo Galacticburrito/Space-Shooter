@@ -14,14 +14,12 @@ mod health;
 use health::{Damage, Health};
 mod ai;
 mod collision;
-mod data_tbl;
+mod data_config;
 mod durability;
-mod global;
 mod graphic;
 mod iterable_enum;
 mod lifetime;
-mod mass;
-mod planet;
+mod particle_system;
 mod primitive;
 mod record;
 mod rotation;
@@ -30,6 +28,7 @@ mod serialization;
 mod ship;
 mod ship_composition;
 mod space;
+mod ui;
 
 #[derive(Reflect, Resource, Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum AppState {
@@ -60,17 +59,17 @@ fn main() {
         camera::CameraPlugin {},
         space::SpacePlugin {},
         velocity::VelocityPlugin {},
-        global::GlobalPlugin {},
-        planet::PlanetPlugin {},
         player::PlayerPlugin {},
         lifetime::LifetimePlugin {},
         collision::CollisionPlugin {},
         health::HealthPlugin {},
         ai::AiPlugin {},
         ship::ShipPlugin {},
-        data_tbl::TablePlugin {},
+        data_config::TablePlugin {},
         ship_composition::ShipCompositionPlugin {},
         graphic::GraphicPlugin {},
+        ui::UiPlugin {},
+        particle_system::ParticleSystemPlugin {},
     ))
     // debug
     .add_plugins((debug::DebugPlugin {},))

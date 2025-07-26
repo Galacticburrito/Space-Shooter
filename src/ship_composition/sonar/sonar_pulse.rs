@@ -60,9 +60,9 @@ impl SonarPulse {
 /// unchanging pulse data, sent by the Sonar
 #[derive(Reflect, Clone, Deserialize, Debug)]
 pub struct SonarPulseData {
-    thickness: f32,
-    speed: f32,
-    range: f32,
+    pub thickness: f32,
+    pub speed: f32,
+    pub range: f32,
 }
 
 /// adds necessary visual elements upon adding SonarPulse
@@ -82,7 +82,7 @@ fn sonar_pulse_constructor(
     };
 
     let ring = Annulus::new(0., pulse.data.thickness);
-    let graphic = Graphic::new(ring.into(), PalColor::White);
+    let graphic = Graphic::new(ring.into(), PalColor::White.into());
     let collider = Collider::new(ColliderType::from(ring), CollisionLayer::SonarPulse);
 
     commands.entity(trigger.target()).insert((
@@ -124,7 +124,7 @@ fn sonar_pulse_collide(
     mut collision_events: EventReader<CollisionEvent>,
     detectable_query: Query<(Entity, &mut SonarDetectable), With<Collider>>,
     pulse_query: Query<&SonarPulse, With<Collider>>,
-    mut commands: Commands,
+    mut event_writer: EventWriter<DetectionEvent>,
 ) {
     for (d_entity, mut d_detectable) in detectable_query {
         let pulse_opt = collision::collided_with_component::<SonarPulse, With<Collider>>(
@@ -137,16 +137,16 @@ fn sonar_pulse_collide(
             // (previously detected, detected now)
             (true, Some(pulse)) => {
                 info!("triggered detected!");
-                commands.trigger(DetectionEvent::Detected(pulse.clone(), d_entity));
+                event_writer.write(DetectionEvent::Detected(pulse.clone(), d_entity));
             }
             (false, Some(pulse)) => {
                 info!("triggered first detected!");
-                commands.trigger(DetectionEvent::FirstDetected(pulse.clone(), d_entity));
-                commands.trigger(DetectionEvent::Detected(pulse.clone(), d_entity));
+                event_writer.write(DetectionEvent::FirstDetected(pulse.clone(), d_entity));
+                event_writer.write(DetectionEvent::Detected(pulse.clone(), d_entity));
             }
             (true, None) => {
                 info!("triggered last detected!");
-                commands.trigger(DetectionEvent::LastDetected(d_entity));
+                event_writer.write(DetectionEvent::LastDetected(d_entity));
             }
             (false, None) => {}
         };

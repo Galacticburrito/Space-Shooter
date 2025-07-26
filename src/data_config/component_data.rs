@@ -3,6 +3,7 @@ use crate::{
     Health,
     collision::collider::Collider,
     graphic::Graphic,
+    particle_system::emitter::ParticleEmitter,
     ship_composition::{engine::Engine, gun::Gun, sonar::Sonar},
 };
 use bevy::prelude::*;
@@ -18,6 +19,7 @@ pub enum ComponentData {
     Graphic(Graphic),
     Collider(raw::ColliderRaw),
     Sonar(raw::SonarRaw),
+    ParticleEmitter(raw::ParticleEmitterRaw),
 }
 
 impl ComponentData {
@@ -29,6 +31,9 @@ impl ComponentData {
             Self::Graphic(graphic) => ComponentConcrete::Graphic(graphic.clone()),
             Self::Collider(collider) => ComponentConcrete::Collider(collider.concrete()),
             Self::Sonar(sonar) => ComponentConcrete::Sonar(sonar.concrete()),
+            Self::ParticleEmitter(emitter) => {
+                ComponentConcrete::ParticleEmitter(emitter.concrete())
+            }
         }
     }
 }
@@ -40,6 +45,7 @@ pub enum ComponentConcrete {
     Graphic(Graphic),
     Collider(Collider),
     Sonar(Sonar),
+    ParticleEmitter(ParticleEmitter),
 }
 
 pub fn add_components_to_entity(entity: &mut EntityCommands, components: &[ComponentData]) {
@@ -63,6 +69,9 @@ pub fn add_components_to_entity(entity: &mut EntityCommands, components: &[Compo
             }
             ComponentConcrete::Sonar(sonar) => {
                 entity.insert(sonar.clone());
+            }
+            ComponentConcrete::ParticleEmitter(emitter) => {
+                entity.insert(emitter.clone());
             }
         }
     }

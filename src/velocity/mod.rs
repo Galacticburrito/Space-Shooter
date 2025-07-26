@@ -1,11 +1,7 @@
-use crate::{
-    SystemUpdateSet,
-    global::{GlobalAngularVelocity, GlobalVelocity},
-    rotation,
-};
+use crate::{SystemUpdateSet, rotation};
 use bevy::prelude::*;
-
-// NOTE: Body doesn't work with parent/child relationships
+pub mod global;
+pub mod max;
 
 pub struct VelocityPlugin {}
 
@@ -18,13 +14,14 @@ impl Plugin for VelocityPlugin {
         .add_observer(add_velocity_to_transform)
         .add_observer(add_angular_velocity_to_transform)
         .register_type::<Velocity>()
-        .register_type::<AngularVelocity>();
+        .register_type::<AngularVelocity>()
+        .add_plugins((global::GlobalPlugin {}, max::MaxPlugin {}));
     }
 }
 
 /// NOTE: may need GlobalTransform and GlobalVelocity if child
 #[derive(Clone, Component, Default, Reflect)]
-#[require(Transform, GlobalVelocity)]
+#[require(Transform, global::GlobalVelocity)]
 pub struct Velocity(pub Vec2);
 
 impl Velocity {
@@ -32,7 +29,7 @@ impl Velocity {
 }
 
 #[derive(Clone, Component, Default, Reflect)]
-#[require(Transform, GlobalAngularVelocity)]
+#[require(Transform, global::GlobalAngularVelocity)]
 pub struct AngularVelocity(pub f32);
 
 /// update transform posiiton equal to computed body transform
@@ -51,7 +48,7 @@ fn update_angular_velocity(mut query: Query<(&AngularVelocity, &mut Transform)>,
     }
 }
 
-/// same thing as adding a #[require(Velocity)] to Transform component
+/// same as adding a #[require(Velocity)] to Transform component
 fn add_velocity_to_transform(
     trigger: Trigger<OnAdd, Transform>,
     query: Query<Entity, With<Velocity>>,
@@ -64,7 +61,7 @@ fn add_velocity_to_transform(
     }
 }
 
-/// same thing as adding a #[require(AngularVelocity)] to Transform component
+/// same as adding a #[require(AngularVelocity)] to Transform component
 fn add_angular_velocity_to_transform(
     trigger: Trigger<OnAdd, Transform>,
     query: Query<Entity, With<AngularVelocity>>,

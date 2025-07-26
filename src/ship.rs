@@ -1,7 +1,7 @@
 use crate::ship_composition::sonar::SonarDetectable;
 use crate::{
     AppState,
-    data_tbl::{
+    data_config::{
         blueprint::{self, BlueprintKey, BlueprintRegistry, BlueprintTable, BlueprintType},
         data::{self, DataKey, DataRegistry, DataTable},
     },

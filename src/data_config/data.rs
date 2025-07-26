@@ -1,10 +1,11 @@
-use super::component_data::{self, ComponentData};
+use super::{
+    assets_loaded::AssetsLoading,
+    component_data::{self, ComponentData},
+};
 use crate::{AppState, iterable_enum::IterableEnum};
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
 use serde::Deserialize;
-
-use super::assets_loaded::AssetsLoading;
 
 pub struct DataPlugin {}
 
@@ -70,7 +71,7 @@ fn load_data_registry(
         assets_loading.0.push(handle.id().untyped());
         data_registry.tables.insert(registry_name, handle);
     }
-    info!("data registry loading")
+    info!("data registry loading");
 }
 
 /// returns a copied entry from loaded data registry

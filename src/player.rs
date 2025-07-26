@@ -1,10 +1,9 @@
 use crate::{
     AppState, SystemUpdateSet,
-    data_tbl::{
+    data_config::{
         blueprint::{BlueprintRegistry, BlueprintTable, BlueprintType},
         data::{DataRegistry, DataTable},
     },
-    global::GlobalVelocity,
     ship,
     ship_composition::{
         bullet::BulletAssets,
@@ -12,6 +11,7 @@ use crate::{
         gun::Gun,
         sonar::Sonar,
     },
+    velocity::global::GlobalVelocity,
     velocity::{AngularVelocity, Velocity},
 };
 use bevy::prelude::*;
@@ -38,15 +38,6 @@ fn setup(
     d_registry: Res<DataRegistry>,
     d_table: Res<Assets<DataTable>>,
 ) {
-    /*let player_ship = ship::spawn_ship(
-        &ShipType::Interceptor,
-        Transform::default(),
-        Velocity::ZERO,
-        &mut materials,
-        &mut meshes,
-        &mut commands,
-    );*/
-
     let Some(player_ship) = ship::spawn_ship_from_blueprint(
         "ship_1",
         &BlueprintType::TransformVelocity(

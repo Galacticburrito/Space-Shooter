@@ -4,6 +4,7 @@ use crate::{
         collider::{Collider, CollisionLayer},
         collider_type::ColliderType,
     },
+    particle_system::{emitter::ParticleEmitter, particle::ParticleData},
     primitive::Primitive,
     ship_composition::{
         bullet::BulletData,
@@ -13,6 +14,7 @@ use crate::{
     },
 };
 use serde::Deserialize;
+use std::ops::Range;
 
 // raw is used to convert from RON into concrete component,
 // if that component has special logic in their fn new()
@@ -82,5 +84,22 @@ pub struct SonarRaw {
 impl SonarRaw {
     pub fn concrete(&self) -> Sonar {
         Sonar::new(self.pulse_data.clone())
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct ParticleEmitterRaw {
+    spawn_rate: f32,
+    angle_range: Range<f32>,
+    particle_data: ParticleData,
+}
+
+impl ParticleEmitterRaw {
+    pub fn concrete(&self) -> ParticleEmitter {
+        ParticleEmitter::new(
+            self.spawn_rate,
+            self.angle_range.clone(),
+            self.particle_data.clone(),
+        )
     }
 }

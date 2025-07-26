@@ -1,6 +1,6 @@
 use crate::{
     AppState,
-    data_tbl::{
+    data_config::{
         blueprint::{BlueprintRegistry, BlueprintTable, BlueprintType},
         data::{DataRegistry, DataTable},
     },

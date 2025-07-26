@@ -1,6 +1,6 @@
-use crate::{SystemUpdateSet, global::GlobalVelocity};
+use crate::{SystemUpdateSet, velocity::global::GlobalVelocity};
 
-use super::{SnapshotData, Sonar, SonarDetectable, SonarPulse};
+use super::{SnapshotData, Sonar, SonarDetectable, SonarPulse, sonar_pulse::SonarPulseData};
 use bevy::prelude::*;
 
 pub struct DetectionEventPlugin {}
@@ -29,7 +29,6 @@ fn on_detected(
     mut sonar_query: Query<&mut Sonar>,
     detectable_query: Query<(&GlobalTransform, &GlobalVelocity), With<SonarDetectable>>,
 ) {
-    info!("length: {}", events.len());
     for event in events.read() {
         if let DetectionEvent::Detected(pulse, entity) = event {
             info!("detected!");

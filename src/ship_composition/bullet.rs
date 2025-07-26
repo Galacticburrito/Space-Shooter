@@ -21,14 +21,14 @@ fn setup(mut commands: Commands) {
     // laser bullet
     bullet_assets.0.insert(
         BulletType::Laser,
-        Graphic::new(Circle::new(2.0).into(), PalColor::Red),
+        Graphic::new(Circle::new(2.0).into(), PalColor::Red.into()),
     );
 
     // missile bullet
     // missiles are bigger
     bullet_assets.0.insert(
         BulletType::Missile,
-        Graphic::new(Circle::new(3.0).into(), PalColor::White),
+        Graphic::new(Circle::new(3.0).into(), PalColor::White.into()),
     );
     commands.insert_resource(bullet_assets);
 }
